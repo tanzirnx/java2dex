@@ -18,17 +18,10 @@ Upload `.java` files in the browser, server compiles with `javac` and converts t
 
 - **Free plan spins down after inactivity** — first request after idle takes ~30-60s to wake up.
 - **5MB per file, 50 files max** upload limit (edit in `server.js` → `multer` limits if you need more).
-- Only plain Java is supported out of the box. If your `.java` files reference **Android SDK classes** (like `android.app.Activity`), compilation will fail unless you provide `android.jar` on the classpath — see below.
+- Code that references **Android SDK classes** (`android.app.Activity`, `android.widget.*`, etc.) is supported — the Dockerfile downloads `platforms;android-34` (`android.jar`) at build time and sets `ANDROID_JAR` automatically, which `server.js` puts on the `javac` classpath. No manual setup needed.
 - Multiple independent classes are compiled together in one `javac` call, so they can reference each other.
-
-## Adding android.jar support (optional)
-
-If you want to convert code that uses Android APIs:
-
-1. Get `android.jar` from an Android SDK platform (e.g. `platforms/android-34/android.jar`).
-2. Add it into the repo, e.g. `libs/android.jar`.
-3. In `Dockerfile`, add: `ENV ANDROID_JAR=/app/libs/android.jar`
-4. Redeploy. The server already reads `ANDROID_JAR` and puts it on the `javac` classpath.
+- Note: `android.jar` only has method *stubs* (bodies throw at runtime) — it's enough to compile and dex your code, but you can't actually run it on this server. You still install/run the resulting `.dex`/app on a real device or emulator.
+- Need a different API level? Change `PLATFORM_VERSION` in the `Dockerfile` (e.g. `android-33`).
 
 ## Local test (needs JDK + Android build-tools installed locally)
 

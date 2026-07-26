@@ -23,11 +23,14 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 
 ENV PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${PATH}"
 
+ENV PLATFORM_VERSION=android-34
+
 RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses > /dev/null && \
-    sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "build-tools;${BUILD_TOOLS_VERSION}"
+    sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "build-tools;${BUILD_TOOLS_VERSION}" "platforms;${PLATFORM_VERSION}"
 
 ENV PATH="${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS_VERSION}:${PATH}"
 ENV D8_PATH="${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS_VERSION}/d8"
+ENV ANDROID_JAR="${ANDROID_SDK_ROOT}/platforms/${PLATFORM_VERSION}/android.jar"
 
 # ---- App setup ----
 WORKDIR /app
