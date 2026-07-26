@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Java → DEX Converter</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #161a21;
+    --accent: #4fd1c5;
+    --accent2: #38b2ac;
+    --text: #e6e8eb;
+    --muted: #8a929e;
+    --error: #f56565;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 6px;
+  }
+  p.sub {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 14px;
+  }
+  .dropzone {
+    border: 2px dashed #2d333d;
+    border-radius: 12px;
+    padding: 32px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .dropzone.drag {
+    border-color: var(--accent);
+    background: rgba(79, 209, 197, 0.06);
+  }
+  .dropzone p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  input[type=file] { display: none; }
+  .filelist {
+    margin-top: 16px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .fileitem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 10px;
+    background: #1d222b;
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .fileitem button {
+    background: none;
+    border: none;
+    color: var(--error);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button.convert {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #06201d;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  button.convert:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .status {
+    margin-top: 16px;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .status.show { display: block; }
+  .status.info { background: rgba(79,209,197,0.1); color: var(--accent); }
+  .status.error { background: rgba(245,101,101,0.1); color: var(--error); }
+  .status.success { background: rgba(72,187,120,0.1); color: #48bb78; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Java → DEX Converter</h1>
+    <p class="sub">Upload one or more .java files. Compiles with javac, converts with d8.</p>
+
+    <div class="dropzone" id="dropzone">
+      <p>Click to choose .java files<br/>or drag & drop them here</p>
+      <input type="file" id="fileInput" accept=".java" multiple />
+    </div>
+
+    <div class="filelist" id="fileList"></div>
+
+    <button class="convert" id="convertBtn" disabled>Convert to DEX</button>
+    <div class="status" id="status"></div>
+  </div>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const fileListEl = document.getElementById('fileList');
+  const convertBtn = document.getElementById('convertBtn');
+  const statusEl = document.getElementById('status');
+
+  let selectedFiles = [];
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    addFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+  function addFiles(fileListObj) {
+    for (const f of fileListObj) {
+      if (f.name.endsWith('.java')) selectedFiles.push(f);
+    }
+    renderFileList();
+  }
+
+  function renderFileList() {
+    fileListEl.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+      const div = document.createElement('div');
+      div.className = 'fileitem';
+      div.innerHTML = `<span>${f.name}</span>`;
+      const btn = document.createElement('button');
+      btn.textContent = 'remove';
+      btn.onclick = () => { selectedFiles.splice(i, 1); renderFileList(); };
+      div.appendChild(btn);
+      fileListEl.appendChild(div);
+    });
+    convertBtn.disabled = selectedFiles.length === 0;
+  }
+
+  function showStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = `status show ${type}`;
+  }
+
+  convertBtn.addEventListener('click', async () => {
+    if (selectedFiles.length === 0) return;
+    convertBtn.disabled = true;
+    showStatus('Compiling & converting...', 'info');
+
+    const formData = new FormData();
+    selectedFiles.forEach(f => formData.append('javaFiles', f));
+
+    try {
+      const res = await fetch('/convert', { method: 'POST', body: formData });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        showStatus((errJson.error || 'Conversion failed') + (errJson.details ? '\n\n' + errJson.details : ''), 'error');
+        convertBtn.disabled = false;
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match ? match[1] : 'classes.dex';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      showStatus(`Done — downloaded ${filename}`, 'success');
+    } catch (err) {
+      showStatus('Network error: ' + err.message, 'error');
+    } finally {
+      convertBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
