@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Convert — java2dex</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/convert">Convert</a>
+      <a href="/history">History</a>
+      <a href="/help">Help</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+  </div>
+</nav>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px;">
+    <span class="eyebrow">Convert</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Compile and dex your source</h1>
+    <p class="lede" style="margin-top:8px;">Upload files, paste code, or both. Everything in the queue is compiled together in one pass.</p>
+
+    <div class="grid-2" style="margin-top:32px; align-items:start;">
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" data-tab="upload">Upload Files</div>
+          <div class="tab" data-tab="paste">Paste Code</div>
+        </div>
+
+        <div class="panel active" id="panel-upload">
+          <div class="dropzone" id="dropzone">
+            <div class="dz-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <p>Click to choose .java files<br/>or drag &amp; drop them here</p>
+          </div>
+          <input type="file" id="fileInput" accept=".java" multiple />
+        </div>
+
+        <div class="panel" id="panel-paste">
+          <label class="field-label">Filename (auto-detected from your public class)</label>
+          <input type="text" id="pasteFilename" placeholder="MyClass.java" />
+          <textarea id="pasteCode" placeholder="Paste your Java code here, any length..." spellcheck="false"></textarea>
+          <div class="paste-actions">
+            <span class="charcount" id="charcount">0 characters</span>
+            <button class="btn btn-ghost btn-sm" id="addPasteBtn">+ Add to queue</button>
+          </div>
+        </div>
+
+        <div class="filelist" id="filelistWrap" style="display:none;">
+          <h3>Queue</h3>
+          <div id="fileList"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX</button>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <h3 style="margin-bottom:14px;">Pipeline</h3>
+          <div class="pipeline" style="flex-direction:column; align-items:stretch;">
+            <div class="stage" id="stage-source"><span class="stage-label">Source</span><p class="stage-desc" id="stage-source-desc">Waiting for files…</p></div>
+            <div class="stage-arrow" style="height:20px;"></div>
+            <div class="stage" id="stage-compile"><span class="stage-label">Compile</span><p class="stage-desc" id="stage-compile-desc">javac</p></div>
+            <div class="stage-arrow" style="height:20px;"></div>
+            <div class="stage" id="stage-dex"><span class="stage-label">Dex</span><p class="stage-desc" id="stage-dex-desc">d8</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:10px;">Good to know</h3>
+          <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.9;">
+            <li>Up to 20MB per file, 50 files per run.</li>
+            <li>Android SDK classes (android.app.*, android.widget.*, etc.) compile out of the box.</li>
+            <li>Files are deleted from the server right after your download starts.</li>
+            <li>Successful and failed runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+<script src="/js/history.js"></script>
+<script>
+  // ---- tab switching ----
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---- shared file list: each entry is { name, source: File, type: 'file'|'pasted' } ----
+  let selectedFiles = [];
+
+  const fileListEl = document.getElementById('fileList');
+  const filelistWrap = document.getElementById('filelistWrap');
+  const convertBtn = document.getElementById('convertBtn');
+  const statusEl = document.getElementById('status');
+  const stageSourceDesc = document.getElementById('stage-source-desc');
+
+  function renderFileList() {
+    fileListEl.innerHTML = '';
+    filelistWrap.style.display = selectedFiles.length ? 'block' : 'none';
+    stageSourceDesc.textContent = selectedFiles.length
+      ? selectedFiles.length + ' file' + (selectedFiles.length > 1 ? 's' : '') + ' queued'
+      : 'Waiting for files…';
+
+    selectedFiles.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.className = 'fileitem';
+      const sizeKb = (entry.source.size / 1024).toFixed(1);
+      const badgeClass = entry.type === 'pasted' ? 'badge-pasted' : 'badge-file';
+      const badgeLabel = entry.type === 'pasted' ? 'pasted' : 'file';
+      div.innerHTML = `<span class="badge ${badgeClass}">${badgeLabel}</span><span class="name">${entry.name}</span><span class="size">${sizeKb} KB</span>`;
+      const btn = document.createElement('button');
+      btn.className = 'remove';
+      btn.textContent = 'remove';
+      btn.onclick = () => { selectedFiles.splice(i, 1); renderFileList(); };
+      div.appendChild(btn);
+      fileListEl.appendChild(div);
+    });
+    convertBtn.disabled = selectedFiles.length === 0;
+  }
+
+  // ---- upload mode ----
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    addUploadedFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', () => { addUploadedFiles(fileInput.files); fileInput.value = ''; });
+
+  function addUploadedFiles(fileListObj) {
+    let added = 0;
+    for (const f of fileListObj) {
+      if (f.name.endsWith('.java')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+    }
+    renderFileList();
+    if (added) showToast(added + ' file' + (added > 1 ? 's' : '') + ' added to queue');
+  }
+
+  // ---- paste mode ----
+  const pasteCode = document.getElementById('pasteCode');
+  const pasteFilename = document.getElementById('pasteFilename');
+  const charcount = document.getElementById('charcount');
+  const addPasteBtn = document.getElementById('addPasteBtn');
+
+  pasteCode.addEventListener('input', () => {
+    charcount.textContent = pasteCode.value.length.toLocaleString() + ' characters';
+    if (!pasteFilename.dataset.userEdited) {
+      const name = detectClassName(pasteCode.value);
+      pasteFilename.value = name ? name + '.java' : '';
+    }
+  });
+  pasteFilename.addEventListener('input', () => { pasteFilename.dataset.userEdited = '1'; });
+
+  function detectClassName(code) {
+    let m = code.match(/\bpublic\s+(?:final\s+|abstract\s+|strictfp\s+|sealed\s+|non-sealed\s+)*(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    if (m) return m[1];
+    m = code.match(/\b(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    if (m) return m[1];
+    return null;
+  }
+
+  addPasteBtn.addEventListener('click', () => {
+    const code = pasteCode.value;
+    if (!code.trim()) { showStatus('Paste some Java code first.', 'error'); return; }
+    let filename = pasteFilename.value.trim();
+    if (!filename) filename = 'Pasted' + Date.now() + '.java';
+    if (!filename.endsWith('.java')) filename += '.java';
+
+    const blob = new Blob([code], { type: 'text/plain' });
+    const file = new File([blob], filename, { type: 'text/plain' });
+    selectedFiles.push({ name: filename, source: file, type: 'pasted' });
+    renderFileList();
+    showToast(filename + ' added to queue');
+
+    pasteCode.value = '';
+    pasteFilename.value = '';
+    delete pasteFilename.dataset.userEdited;
+    charcount.textContent = '0 characters';
+    statusEl.classList.remove('show');
+  });
+
+  function showStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = `status show ${type}`;
+  }
+
+  function setStage(stageId, mode) {
+    const el = document.getElementById(stageId);
+    el.style.borderColor = mode === 'active' ? 'var(--copper)' : mode === 'done' ? 'var(--teal)' : 'var(--line)';
+  }
+  function resetStages() {
+    ['stage-source', 'stage-compile', 'stage-dex'].forEach(id => setStage(id, 'idle'));
+  }
+
+  convertBtn.addEventListener('click', async () => {
+    if (selectedFiles.length === 0) return;
+    convertBtn.disabled = true;
+    resetStages();
+    setStage('stage-source', 'done');
+    setStage('stage-compile', 'active');
+    showStatus('Compiling & converting...', 'info');
+
+    const formData = new FormData();
+    selectedFiles.forEach(entry => formData.append('javaFiles', entry.source, entry.name));
+
+    const inputFilesMeta = selectedFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
+
+    try {
+      const res = await fetch('/convert', { method: 'POST', body: formData });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const msg = (errJson.error || 'Conversion failed') + (errJson.details ? '\n\n' + errJson.details : '');
+        showStatus(msg, 'error');
+        setStage('stage-compile', 'idle');
+        setStage('stage-dex', 'idle');
+
+        J2DHistory.add({
+          inputFiles: inputFilesMeta,
+          status: 'error',
+          errorMessage: (errJson.error || 'Conversion failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : ''),
+        });
+
+        convertBtn.disabled = false;
+        return;
+      }
+
+      setStage('stage-compile', 'done');
+      setStage('stage-dex', 'active');
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match ? match[1] : 'classes.dex';
+
+      setStage('stage-dex', 'done');
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      showStatus(`Done — downloaded ${filename}`, 'success');
+      showToast('Saved to History');
+
+      const historyEntry = {
+        inputFiles: inputFilesMeta,
+        status: 'success',
+        outputName: filename,
+        outputSizeBytes: blob.size,
+      };
+      if (blob.size <= J2DHistory.maxStoredOutputBytes) {
+        try { historyEntry.outputBase64 = await blobToBase64(blob); } catch (e) { /* skip storing blob */ }
+      }
+      J2DHistory.add(historyEntry);
+
+    } catch (err) {
+      showStatus('Network error: ' + err.message, 'error');
+      resetStages();
+      J2DHistory.add({ inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
+    } finally {
+      convertBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

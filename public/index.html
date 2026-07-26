@@ -3,219 +3,148 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Java → DEX Converter</title>
-<style>
-  :root {
-    --bg: #0f1115;
-    --card: #161a21;
-    --accent: #4fd1c5;
-    --accent2: #38b2ac;
-    --text: #e6e8eb;
-    --muted: #8a929e;
-    --error: #f56565;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .card {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 32px;
-    width: 100%;
-    max-width: 520px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-  }
-  h1 {
-    font-size: 22px;
-    margin: 0 0 6px;
-  }
-  p.sub {
-    color: var(--muted);
-    margin: 0 0 24px;
-    font-size: 14px;
-  }
-  .dropzone {
-    border: 2px dashed #2d333d;
-    border-radius: 12px;
-    padding: 32px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .dropzone.drag {
-    border-color: var(--accent);
-    background: rgba(79, 209, 197, 0.06);
-  }
-  .dropzone p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  input[type=file] { display: none; }
-  .filelist {
-    margin-top: 16px;
-    max-height: 160px;
-    overflow-y: auto;
-  }
-  .fileitem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    padding: 6px 10px;
-    background: #1d222b;
-    border-radius: 8px;
-    margin-bottom: 6px;
-  }
-  .fileitem button {
-    background: none;
-    border: none;
-    color: var(--error);
-    cursor: pointer;
-    font-size: 13px;
-  }
-  button.convert {
-    width: 100%;
-    margin-top: 20px;
-    padding: 13px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #06201d;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  button.convert:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .status {
-    margin-top: 16px;
-    font-size: 13px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    display: none;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .status.show { display: block; }
-  .status.info { background: rgba(79,209,197,0.1); color: var(--accent); }
-  .status.error { background: rgba(245,101,101,0.1); color: var(--error); }
-  .status.success { background: rgba(72,187,120,0.1); color: #48bb78; }
-</style>
+<title>Java → DEX Converter — compile Android bytecode in your browser</title>
+<meta name="description" content="Upload or paste .java source, compile it with javac, and convert it to Dalvik .dex bytecode — free, in your browser, no install." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <div class="card">
-    <h1>Java → DEX Converter</h1>
-    <p class="sub">Upload one or more .java files. Compiles with javac, converts with d8.</p>
 
-    <div class="dropzone" id="dropzone">
-      <p>Click to choose .java files<br/>or drag & drop them here</p>
-      <input type="file" id="fileInput" accept=".java" multiple />
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/convert">Convert</a>
+      <a href="/history">History</a>
+      <a href="/help">Help</a>
     </div>
-
-    <div class="filelist" id="fileList"></div>
-
-    <button class="convert" id="convertBtn" disabled>Convert to DEX</button>
-    <div class="status" id="status"></div>
+    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
   </div>
+</nav>
 
-<script>
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('fileInput');
-  const fileListEl = document.getElementById('fileList');
-  const convertBtn = document.getElementById('convertBtn');
-  const statusEl = document.getElementById('status');
+<main class="page-main">
 
-  let selectedFiles = [];
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">javac → d8 → classes.dex</span>
+        <h1>Turn .java files into installable DEX bytecode.</h1>
+        <p class="lede">Paste your source or drop in files, and this tool compiles it with <code>javac</code> and converts the output with Android's <code>d8</code> — the same pipeline your build system runs, just without the setup. Free, no account, no install.</p>
+        <div class="hero-actions">
+          <a href="/convert" class="btn btn-primary">Start converting →</a>
+          <a href="/help" class="btn btn-ghost">How it works</a>
+        </div>
+      </div>
+      <div class="circuit-art" aria-hidden="true">
+        <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#E8963B" stop-opacity="0.9"/>
+              <stop offset="1" stop-color="#4FD1B8" stop-opacity="0.6"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="320" height="320" fill="#131B2C"/>
+          <g stroke="#232E45" stroke-width="1">
+            <line x1="0" y1="80" x2="320" y2="80"/>
+            <line x1="0" y1="160" x2="320" y2="160"/>
+            <line x1="0" y1="240" x2="320" y2="240"/>
+            <line x1="80" y1="0" x2="80" y2="320"/>
+            <line x1="240" y1="0" x2="240" y2="320"/>
+          </g>
+          <rect x="60" y="60" width="60" height="60" rx="6" fill="none" stroke="#E8963B" stroke-width="2"/>
+          <text x="90" y="95" fill="#E8963B" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">.java</text>
+          <rect x="130" y="130" width="60" height="60" rx="6" fill="none" stroke="url(#g1)" stroke-width="2"/>
+          <text x="160" y="165" fill="#EDEFF3" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">.class</text>
+          <rect x="200" y="200" width="60" height="60" rx="6" fill="none" stroke="#4FD1B8" stroke-width="2"/>
+          <text x="230" y="235" fill="#4FD1B8" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">.dex</text>
+          <path d="M118 100 L142 132" stroke="#E8963B" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <path d="M188 170 L202 202" stroke="#4FD1B8" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <circle cx="90" cy="90" r="3" fill="#E8963B"/>
+          <circle cx="160" cy="160" r="3" fill="#EDEFF3"/>
+          <circle cx="230" cy="230" r="3" fill="#4FD1B8"/>
+        </svg>
+      </div>
+    </div>
+  </section>
 
-  dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('drag');
-    addFiles(e.dataTransfer.files);
-  });
-  fileInput.addEventListener('change', () => addFiles(fileInput.files));
+  <section class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Build stages</span>
+      <h2 style="margin-top:10px;">Same pipeline, every time</h2>
+    </div>
+    <div class="pipeline">
+      <div class="stage">
+        <span class="stage-label">01 · Source</span>
+        <p class="stage-desc">Upload .java files or paste code straight into the editor. Multiple files at once, any length.</p>
+      </div>
+      <div class="stage-arrow"></div>
+      <div class="stage">
+        <span class="stage-label">02 · Compile</span>
+        <p class="stage-desc">javac compiles everything together, with android.jar on the classpath for SDK references.</p>
+      </div>
+      <div class="stage-arrow"></div>
+      <div class="stage">
+        <span class="stage-label">03 · Dex</span>
+        <p class="stage-desc">d8 converts the .class output into Dalvik bytecode — classes.dex, ready to package.</p>
+      </div>
+    </div>
+  </section>
 
-  function addFiles(fileListObj) {
-    for (const f of fileListObj) {
-      if (f.name.endsWith('.java')) selectedFiles.push(f);
-    }
-    renderFileList();
-  }
+  <section class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What you get</span>
+      <h2 style="margin-top:10px;">Built for real Android source, not toy examples</h2>
+    </div>
+    <div class="loglist card">
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Drag, drop, or paste</strong><span>Add files by drag-and-drop, file picker, or paste code directly with auto-detected class names.</span></div>
+      </div>
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Android SDK aware</strong><span>References to android.app, android.widget, android.graphics and friends compile out of the box.</span></div>
+      </div>
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Long files, embedded assets</strong><span>Files up to 20MB — enough for source with embedded base64 images or large resource strings.</span></div>
+      </div>
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Local history</strong><span>Every conversion is logged to your browser's storage — nothing is kept on the server after it's done.</span></div>
+      </div>
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Clear errors</strong><span>Compiler errors are shown in full, with file and line number, instead of a generic failure message.</span></div>
+      </div>
+      <div class="logline">
+        <span class="prompt">&gt;</span>
+        <div class="logtext"><strong>Free, no account</strong><span>No sign-up, no usage cap beyond file size. Open it and convert.</span></div>
+      </div>
+    </div>
+  </section>
 
-  function renderFileList() {
-    fileListEl.innerHTML = '';
-    selectedFiles.forEach((f, i) => {
-      const div = document.createElement('div');
-      div.className = 'fileitem';
-      div.innerHTML = `<span>${f.name}</span>`;
-      const btn = document.createElement('button');
-      btn.textContent = 'remove';
-      btn.onclick = () => { selectedFiles.splice(i, 1); renderFileList(); };
-      div.appendChild(btn);
-      fileListEl.appendChild(div);
-    });
-    convertBtn.disabled = selectedFiles.length === 0;
-  }
+  <section class="wrap">
+    <div class="card card-elevated" style="text-align:center; padding:48px 24px;">
+      <h2>Ready when your source is.</h2>
+      <p class="lede" style="margin:12px auto 0;">Open the converter and drop in your first file.</p>
+      <div class="hero-actions" style="justify-content:center; margin-top:24px;">
+        <a href="/convert" class="btn btn-primary">Go to Convert →</a>
+      </div>
+    </div>
+  </section>
 
-  function showStatus(msg, type) {
-    statusEl.textContent = msg;
-    statusEl.className = `status show ${type}`;
-  }
+</main>
 
-  convertBtn.addEventListener('click', async () => {
-    if (selectedFiles.length === 0) return;
-    convertBtn.disabled = true;
-    showStatus('Compiling & converting...', 'info');
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
 
-    const formData = new FormData();
-    selectedFiles.forEach(f => formData.append('javaFiles', f));
-
-    try {
-      const res = await fetch('/convert', { method: 'POST', body: formData });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        showStatus((errJson.error || 'Conversion failed') + (errJson.details ? '\n\n' + errJson.details : ''), 'error');
-        convertBtn.disabled = false;
-        return;
-      }
-
-      const blob = await res.blob();
-      const disposition = res.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename="(.+)"/);
-      const filename = match ? match[1] : 'classes.dex';
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      showStatus(`Done — downloaded ${filename}`, 'success');
-    } catch (err) {
-      showStatus('Network error: ' + err.message, 'error');
-    } finally {
-      convertBtn.disabled = false;
-    }
-  });
-</script>
+<script src="/js/nav.js"></script>
 </body>
 </html>

@@ -19,15 +19,21 @@ const ANDROID_JAR = process.env.ANDROID_JAR || ""; // optional, only needed if c
 
 const upload = multer({
   dest: path.join(os.tmpdir(), "java2dex-uploads"),
-  limits: { fileSize: 5 * 1024 * 1024, files: 50 }, // 5MB/file, up to 50 files
+  limits: { fileSize: 20 * 1024 * 1024, files: 50 }, // 20MB/file, up to 50 files
 });
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Clean URLs for the multi-page site (GET). The existing POST /convert below
+// remains the conversion API — Express treats them as separate routes.
+app.get("/convert", (req, res) => res.sendFile(path.join(__dirname, "public", "convert.html")));
+app.get("/history", (req, res) => res.sendFile(path.join(__dirname, "public", "history.html")));
+app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help.html")));
+
 function run(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { maxBuffer: 1024 * 1024 * 20, ...options }, (err, stdout, stderr) => {
+    execFile(cmd, args, { maxBuffer: 1024 * 1024 * 50, ...options }, (err, stdout, stderr) => {
       if (err) {
         err.stdout = stdout;
         err.stderr = stderr;

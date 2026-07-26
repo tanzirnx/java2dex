@@ -1,33 +1,40 @@
-# Java → DEX Converter
+# java2dex
 
-Upload `.java` files in the browser, server compiles with `javac` and converts to `.dex` with `d8`, you download the result.
+A small multi-page site for turning `.java` source into Dalvik `.dex` bytecode — free, no account, runs in the browser.
+
+**Pages**
+- **Home** (`/`) — what it does, the pipeline, feature list
+- **Convert** (`/convert`) — upload files and/or paste code, drag-and-drop, live pipeline status, queue up to 50 files
+- **History** (`/history`) — every past run, stored in your browser's `localStorage` (not on the server); re-download small outputs, delete entries, clear all
+- **Help** (`/help`) — how the pipeline works + fixes for the compile errors you'll actually hit
+
+**Backend**: Node/Express calls `javac` then `d8` (the same tools a real Android build uses).
 
 ## Deploy to Render (free plan)
 
 1. Push this folder to a new GitHub repo.
-2. On [render.com](https://render.com) → **New +** → **Web Service**.
-3. Connect your repo.
-4. Render will auto-detect `render.yaml` (Docker env, free plan). If it doesn't, set manually:
-   - **Environment**: Docker
-   - **Plan**: Free
-   - **Health Check Path**: `/health`
-5. Click **Create Web Service**. First build takes ~5-8 min (downloading JDK + Android build-tools).
-6. Once live, open the URL — upload `.java` files, click Convert, get `classes.dex` (or a zip if multiple dex files are produced).
+2. On [render.com](https://render.com) → **New +** → **Web Service** → connect the repo.
+3. Render auto-detects `render.yaml` (Docker, free plan). If not, set manually:
+   - Environment: **Docker**
+   - Plan: **Free**
+   - Health Check Path: `/health`
+4. **Create Web Service**. First build takes ~8-10 min (downloading JDK + Android build-tools + platform jar).
+5. Open the URL — Home page loads first; go to **Convert** to use the tool.
 
 ## Notes / limits
 
 - **Free plan spins down after inactivity** — first request after idle takes ~30-60s to wake up.
-- **5MB per file, 50 files max** upload limit (edit in `server.js` → `multer` limits if you need more).
-- Code that references **Android SDK classes** (`android.app.Activity`, `android.widget.*`, etc.) is supported — the Dockerfile downloads `platforms;android-34` (`android.jar`) at build time and sets `ANDROID_JAR` automatically, which `server.js` puts on the `javac` classpath. No manual setup needed.
-- Multiple independent classes are compiled together in one `javac` call, so they can reference each other.
-- Note: `android.jar` only has method *stubs* (bodies throw at runtime) — it's enough to compile and dex your code, but you can't actually run it on this server. You still install/run the resulting `.dex`/app on a real device or emulator.
-- Need a different API level? Change `PLATFORM_VERSION` in the `Dockerfile` (e.g. `android-33`).
+- **20MB per file, 50 files max** per run (edit in `server.js` → `multer` limits if you need more).
+- Android SDK classes (`android.app.*`, `android.widget.*`, etc.) compile out of the box — `android.jar` (API 34) is downloaded and wired in automatically at build time.
+- History lives entirely in `localStorage`: metadata for every run, plus the actual output file if it's under ~350KB. Nothing is stored server-side after your download starts. Different browser/device = different history.
+- Change the Android API level by editing `PLATFORM_VERSION` in the `Dockerfile`.
 
-## Local test (needs JDK + Android build-tools installed locally)
+## Local dev (needs JDK + Android build-tools installed locally)
 
 ```bash
 npm install
-D8_PATH=/path/to/build-tools/34.0.0/d8 node server.js
+D8_PATH=/path/to/build-tools/34.0.0/d8 ANDROID_JAR=/path/to/platforms/android-34/android.jar node server.js
 ```
 
 Then open `http://localhost:3000`.
+
