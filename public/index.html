@@ -6,6 +6,12 @@
 <title>Java → DEX Converter — compile Android bytecode in your browser</title>
 <meta name="description" content="Upload or paste .java source, compile it with javac, and convert it to Dalvik .dex bytecode — free, in your browser, no install." />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="java2dex" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css" />
@@ -15,13 +21,16 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/convert">Convert</a>
-      <a href="/history">History</a>
-      <a href="/help">Help</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/history">History</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
     </div>
-    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
   </div>
 </nav>
 
@@ -35,6 +44,7 @@
         <p class="lede">Paste your source or drop in files, and this tool compiles it with <code>javac</code> and converts the output with Android's <code>d8</code> — the same pipeline your build system runs, just without the setup. Free, no account, no install.</p>
         <div class="hero-actions">
           <a href="/convert" class="btn btn-primary">Start converting →</a>
+          <button class="btn btn-ghost install-btn">⤓ Install App</button>
           <a href="/help" class="btn btn-ghost">How it works</a>
         </div>
       </div>

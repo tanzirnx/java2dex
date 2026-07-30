@@ -102,6 +102,8 @@ a { color: inherit; }
 .brand-chip::before { width: 8px; height: 2px; top: 50%; left: -5px; transform: translateY(-50%); }
 .brand-chip::after { width: 2px; height: 8px; left: 50%; top: -5px; transform: translateX(-50%); }
 
+.nav-right { display: flex; align-items: center; gap: 10px; }
+
 .nav-links {
   display: flex;
   gap: 4px;
@@ -129,6 +131,11 @@ a { color: inherit; }
   cursor: pointer;
   align-items: center;
   justify-content: center;
+}
+
+.install-btn {
+  display: none;
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {

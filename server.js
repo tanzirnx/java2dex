@@ -22,6 +22,20 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024, files: 50 }, // 20MB/file, up to 50 files
 });
 
+// ---- Web Share Target: short-lived in-memory handoff ----
+// When the installed PWA is used as an Android "Share to" target, the OS
+// POSTs the shared file(s) here. We stash the text content under a token,
+// redirect to /convert?shared=TOKEN, and the client fetches+consumes it once.
+const sharedFilesStore = new Map(); // token -> { files: [{name, content}], expires }
+const SHARE_TOKEN_TTL_MS = 5 * 60 * 1000;
+
+function cleanupExpiredShares() {
+  const now = Date.now();
+  for (const [token, entry] of sharedFilesStore.entries()) {
+    if (entry.expires < now) sharedFilesStore.delete(token);
+  }
+}
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -30,6 +44,41 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/convert", (req, res) => res.sendFile(path.join(__dirname, "public", "convert.html")));
 app.get("/history", (req, res) => res.sendFile(path.join(__dirname, "public", "history.html")));
 app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help.html")));
+
+// Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
+app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
+  try {
+    cleanupExpiredShares();
+    const files = [];
+    for (const file of req.files || []) {
+      if (!file.originalname.endsWith(".java")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const content = await fsp.readFile(file.path, "utf8").catch(() => "");
+      await fsp.unlink(file.path).catch(() => {});
+      files.push({ name: path.basename(file.originalname), content });
+    }
+    if (files.length === 0) {
+      return res.redirect(303, "/convert?sharedError=1");
+    }
+    const token = uuidv4();
+    sharedFilesStore.set(token, { files, expires: Date.now() + SHARE_TOKEN_TTL_MS });
+    res.redirect(303, "/convert?shared=" + token);
+  } catch (err) {
+    console.error(err);
+    res.redirect(303, "/convert?sharedError=1");
+  }
+});
+
+// One-time retrieval of shared files by the client
+app.get("/api/shared/:token", (req, res) => {
+  cleanupExpiredShares();
+  const entry = sharedFilesStore.get(req.params.token);
+  if (!entry) return res.status(404).json({ error: "Shared files not found or expired." });
+  sharedFilesStore.delete(req.params.token); // one-time use
+  res.json({ files: entry.files });
+});
 
 function run(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
