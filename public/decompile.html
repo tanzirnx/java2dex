@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Convert — java2dex</title>
+<title>Decompile — java2dex</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#0B1220" />
@@ -49,43 +49,27 @@
 
 <main class="page-main">
   <section class="wrap" style="padding-top:40px;">
-    <span class="eyebrow">Convert</span>
-    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Compile and dex your source</h1>
-    <p class="lede" style="margin-top:8px;">Upload files, paste code, or both. Everything in the queue is compiled together in one pass.</p>
+    <span class="eyebrow">Decompile</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">DEX → Java</h1>
+    <p class="lede" style="margin-top:8px;">Upload a .dex, .apk, .jar, or .class file — jadx converts the bytecode back into readable Java source.</p>
 
     <div class="grid-2" style="margin-top:32px; align-items:start;">
       <div class="card">
-        <div class="tabs">
-          <div class="tab active" data-tab="upload">Upload Files</div>
-          <div class="tab" data-tab="paste">Paste Code</div>
-        </div>
-
-        <div class="panel active" id="panel-upload">
-          <div class="dropzone" id="dropzone">
-            <div class="dz-icon">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <p>Click to choose .java files<br/>or drag &amp; drop them here</p>
+        <div class="dropzone" id="dropzone">
+          <div class="dz-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <input type="file" id="fileInput" accept=".java" multiple />
+          <p>Click to choose a file<br/>or drag &amp; drop it here</p>
+          <p style="margin-top:8px; font-size:11.5px;">.dex · .apk · .jar · .class · .aar</p>
         </div>
-
-        <div class="panel" id="panel-paste">
-          <label class="field-label">Filename (auto-detected from your public class)</label>
-          <input type="text" id="pasteFilename" placeholder="MyClass.java" />
-          <textarea id="pasteCode" placeholder="Paste your Java code here, any length..." spellcheck="false"></textarea>
-          <div class="paste-actions">
-            <span class="charcount" id="charcount">0 characters</span>
-            <button class="btn btn-ghost btn-sm" id="addPasteBtn">+ Add to queue</button>
-          </div>
-        </div>
+        <input type="file" id="fileInput" accept=".dex,.apk,.jar,.class,.aar,.zip" multiple />
 
         <div class="filelist" id="filelistWrap" style="display:none;">
           <h3>Queue</h3>
           <div id="fileList"></div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX</button>
+        <button class="btn btn-primary btn-block" id="decompileBtn" disabled style="margin-top:20px;">Decompile to Java</button>
         <div class="status" id="status"></div>
       </div>
 
@@ -93,20 +77,20 @@
         <div class="card" style="margin-bottom:20px;">
           <h3 style="margin-bottom:14px;">Pipeline</h3>
           <div class="pipeline" style="flex-direction:column; align-items:stretch;">
-            <div class="stage" id="stage-source"><span class="stage-label">Source</span><p class="stage-desc" id="stage-source-desc">Waiting for files…</p></div>
+            <div class="stage" id="stage-source"><span class="stage-label">Input</span><p class="stage-desc" id="stage-source-desc">Waiting for a file…</p></div>
             <div class="stage-arrow" style="height:20px;"></div>
-            <div class="stage" id="stage-compile"><span class="stage-label">Compile</span><p class="stage-desc" id="stage-compile-desc">javac</p></div>
+            <div class="stage" id="stage-decompile"><span class="stage-label">jadx</span><p class="stage-desc">Bytecode → readable Java, package structure preserved</p></div>
             <div class="stage-arrow" style="height:20px;"></div>
-            <div class="stage" id="stage-dex"><span class="stage-label">Dex</span><p class="stage-desc" id="stage-dex-desc">d8</p></div>
+            <div class="stage" id="stage-output"><span class="stage-label">Output</span><p class="stage-desc">.zip of .java source files</p></div>
           </div>
         </div>
         <div class="card">
           <h3 style="margin-bottom:10px;">Good to know</h3>
           <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.9;">
-            <li>Up to 20MB per file, 50 files per run.</li>
-            <li>Android SDK classes (android.app.*, android.widget.*, etc.) compile out of the box.</li>
-            <li>Files are deleted from the server right after your download starts.</li>
-            <li>Successful and failed runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser.</li>
+            <li>Up to 60MB per file — enough for most single-DEX APKs.</li>
+            <li>Decompiled output is an approximation — variable names get regenerated, and heavily obfuscated code may come back partial.</li>
+            <li>Only decompile code you have the right to inspect.</li>
+            <li>Runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser, same as conversions.</li>
           </ul>
         </div>
       </div>
@@ -116,7 +100,7 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <span>java2dex — javac + d8, in the browser.</span>
+    <span>java2dex — javac + d8 + jadx, in the browser.</span>
     <span>Free to use. No account required.</span>
   </div>
 </footer>
@@ -124,39 +108,32 @@
 <script src="/js/nav.js"></script>
 <script src="/js/history.js"></script>
 <script>
-  // ---- tab switching ----
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-    });
-  });
-
-  // ---- shared file list: each entry is { name, source: File, type: 'file'|'pasted' } ----
   let selectedFiles = [];
 
   const fileListEl = document.getElementById('fileList');
   const filelistWrap = document.getElementById('filelistWrap');
-  const convertBtn = document.getElementById('convertBtn');
+  const decompileBtn = document.getElementById('decompileBtn');
   const statusEl = document.getElementById('status');
   const stageSourceDesc = document.getElementById('stage-source-desc');
+
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
 
   function renderFileList() {
     fileListEl.innerHTML = '';
     filelistWrap.style.display = selectedFiles.length ? 'block' : 'none';
     stageSourceDesc.textContent = selectedFiles.length
       ? selectedFiles.length + ' file' + (selectedFiles.length > 1 ? 's' : '') + ' queued'
-      : 'Waiting for files…';
+      : 'Waiting for a file…';
 
     selectedFiles.forEach((entry, i) => {
       const div = document.createElement('div');
       div.className = 'fileitem';
-      const sizeKb = (entry.source.size / 1024).toFixed(1);
-      const badgeClass = entry.type === 'pasted' ? 'badge-pasted' : 'badge-file';
-      const badgeLabel = entry.type === 'pasted' ? 'pasted' : 'file';
-      div.innerHTML = `<span class="badge ${badgeClass}">${badgeLabel}</span><span class="name">${entry.name}</span><span class="size">${sizeKb} KB</span>`;
+      const ext = entry.name.split('.').pop().toUpperCase();
+      div.innerHTML = `<span class="badge badge-file">${ext}</span><span class="name">${entry.name}</span><span class="size">${fmtSize(entry.size)}</span>`;
       const btn = document.createElement('button');
       btn.className = 'remove';
       btn.textContent = 'remove';
@@ -164,12 +141,12 @@
       div.appendChild(btn);
       fileListEl.appendChild(div);
     });
-    convertBtn.disabled = selectedFiles.length === 0;
+    decompileBtn.disabled = selectedFiles.length === 0;
   }
 
-  // ---- upload mode ----
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
+  const acceptedExt = ['.dex', '.apk', '.jar', '.class', '.aar', '.zip'];
 
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
@@ -177,61 +154,22 @@
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('drag');
-    addUploadedFiles(e.dataTransfer.files);
+    addFiles(e.dataTransfer.files);
   });
-  fileInput.addEventListener('change', () => { addUploadedFiles(fileInput.files); fileInput.value = ''; });
+  fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
 
-  function addUploadedFiles(fileListObj) {
+  function addFiles(fileListObj) {
     let added = 0;
     for (const f of fileListObj) {
-      if (f.name.endsWith('.java')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      const lower = f.name.toLowerCase();
+      if (acceptedExt.some(ext => lower.endsWith(ext))) {
+        selectedFiles.push(f);
+        added++;
+      }
     }
     renderFileList();
-    if (added) showToast(added + ' file' + (added > 1 ? 's' : '') + ' added to queue');
+    if (added) showToast(added + ' file' + (added > 1 ? 's' : '') + ' added');
   }
-
-  // ---- paste mode ----
-  const pasteCode = document.getElementById('pasteCode');
-  const pasteFilename = document.getElementById('pasteFilename');
-  const charcount = document.getElementById('charcount');
-  const addPasteBtn = document.getElementById('addPasteBtn');
-
-  pasteCode.addEventListener('input', () => {
-    charcount.textContent = pasteCode.value.length.toLocaleString() + ' characters';
-    if (!pasteFilename.dataset.userEdited) {
-      const name = detectClassName(pasteCode.value);
-      pasteFilename.value = name ? name + '.java' : '';
-    }
-  });
-  pasteFilename.addEventListener('input', () => { pasteFilename.dataset.userEdited = '1'; });
-
-  function detectClassName(code) {
-    let m = code.match(/\bpublic\s+(?:final\s+|abstract\s+|strictfp\s+|sealed\s+|non-sealed\s+)*(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
-    if (m) return m[1];
-    m = code.match(/\b(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
-    if (m) return m[1];
-    return null;
-  }
-
-  addPasteBtn.addEventListener('click', () => {
-    const code = pasteCode.value;
-    if (!code.trim()) { showStatus('Paste some Java code first.', 'error'); return; }
-    let filename = pasteFilename.value.trim();
-    if (!filename) filename = 'Pasted' + Date.now() + '.java';
-    if (!filename.endsWith('.java')) filename += '.java';
-
-    const blob = new Blob([code], { type: 'text/plain' });
-    const file = new File([blob], filename, { type: 'text/plain' });
-    selectedFiles.push({ name: filename, source: file, type: 'pasted' });
-    renderFileList();
-    showToast(filename + ' added to queue');
-
-    pasteCode.value = '';
-    pasteFilename.value = '';
-    delete pasteFilename.dataset.userEdited;
-    charcount.textContent = '0 characters';
-    statusEl.classList.remove('show');
-  });
 
   function showStatus(msg, type) {
     statusEl.textContent = msg;
@@ -242,66 +180,58 @@
     const el = document.getElementById(stageId);
     el.style.borderColor = mode === 'active' ? 'var(--copper)' : mode === 'done' ? 'var(--teal)' : 'var(--line)';
   }
-  function resetStages() {
-    ['stage-source', 'stage-compile', 'stage-dex'].forEach(id => setStage(id, 'idle'));
-  }
 
-  convertBtn.addEventListener('click', async () => {
+  decompileBtn.addEventListener('click', async () => {
     if (selectedFiles.length === 0) return;
-    convertBtn.disabled = true;
-    resetStages();
+    decompileBtn.disabled = true;
     setStage('stage-source', 'done');
-    setStage('stage-compile', 'active');
-    showStatus('Compiling & converting...', 'info');
+    setStage('stage-decompile', 'active');
+    setStage('stage-output', 'idle');
+    showStatus('Decompiling with jadx...', 'info');
 
     const formData = new FormData();
-    selectedFiles.forEach(entry => formData.append('javaFiles', entry.source, entry.name));
-
-    const inputFilesMeta = selectedFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
+    selectedFiles.forEach(f => formData.append('inputFiles', f, f.name));
+    const inputFilesMeta = selectedFiles.map(f => ({ name: f.name, size: f.size, kind: 'file' }));
 
     try {
-      const res = await fetch('/convert', { method: 'POST', body: formData });
+      const res = await fetch('/decompile', { method: 'POST', body: formData });
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        const msg = (errJson.error || 'Conversion failed') + (errJson.details ? '\n\n' + errJson.details : '');
+        const msg = (errJson.error || 'Decompilation failed') + (errJson.details ? '\n\n' + errJson.details : '');
         showStatus(msg, 'error');
-        setStage('stage-compile', 'idle');
-        setStage('stage-dex', 'idle');
-
+        setStage('stage-decompile', 'idle');
         J2DHistory.add({
+          kind: 'decompile',
           inputFiles: inputFilesMeta,
           status: 'error',
-          errorMessage: (errJson.error || 'Conversion failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : ''),
+          errorMessage: (errJson.error || 'Decompilation failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : ''),
         });
-
-        convertBtn.disabled = false;
+        decompileBtn.disabled = false;
         return;
       }
 
-      setStage('stage-compile', 'done');
-      setStage('stage-dex', 'active');
+      setStage('stage-decompile', 'done');
+      setStage('stage-output', 'active');
 
       const blob = await res.blob();
       const disposition = res.headers.get('Content-Disposition') || '';
       const match = disposition.match(/filename="(.+)"/);
-      const filename = match ? match[1] : 'classes.dex';
+      const filename = match ? match[1] : 'decompiled-sources.zip';
 
-      setStage('stage-dex', 'done');
+      setStage('stage-output', 'done');
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
 
       showStatus(`Done — downloaded ${filename}`, 'success');
       showToast('Saved to History');
 
       const historyEntry = {
+        kind: 'decompile',
         inputFiles: inputFilesMeta,
         status: 'success',
         outputName: filename,
@@ -314,41 +244,12 @@
 
     } catch (err) {
       showStatus('Network error: ' + err.message, 'error');
-      resetStages();
-      J2DHistory.add({ inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
+      setStage('stage-decompile', 'idle');
+      J2DHistory.add({ kind: 'decompile', inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
     } finally {
-      convertBtn.disabled = false;
+      decompileBtn.disabled = false;
     }
   });
-
-  // ---- import files shared in from the OS "Share to java2dex" action ----
-  (function importSharedFiles() {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('shared');
-    const sharedError = params.get('sharedError');
-
-    if (sharedError) {
-      showToast('Nothing usable was shared — only .java files are accepted.');
-      history.replaceState({}, '', '/convert');
-      return;
-    }
-    if (!token) return;
-
-    fetch('/api/shared/' + encodeURIComponent(token))
-      .then(res => { if (!res.ok) throw new Error('expired'); return res.json(); })
-      .then(data => {
-        const files = data.files || [];
-        files.forEach(f => {
-          const blob = new Blob([f.content], { type: 'text/plain' });
-          const file = new File([blob], f.name, { type: 'text/plain' });
-          selectedFiles.push({ name: f.name, source: file, type: 'file' });
-        });
-        renderFileList();
-        if (files.length) showToast(files.length + ' shared file(s) added to queue');
-      })
-      .catch(() => showToast('That shared link already expired — try sharing again.'))
-      .finally(() => history.replaceState({}, '', '/convert'));
-  })();
 </script>
 </body>
 </html>

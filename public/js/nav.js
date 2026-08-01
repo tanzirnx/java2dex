@@ -7,9 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
   }
 
-  // active link highlighting based on current path
+  // active link highlighting based on current path (top nav, gear icon, bottom tab bar)
   const path = window.location.pathname.replace(/\/$/, '') || '/';
-  document.querySelectorAll('.nav-links a').forEach(a => {
+  document.querySelectorAll('.nav-links a, .gear-btn, .tabbar a').forEach(a => {
     const href = a.getAttribute('href').replace(/\/$/, '') || '/';
     if (href === path) a.classList.add('active');
   });

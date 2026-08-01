@@ -8,19 +8,48 @@ const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 const os = require("os");
+const webpush = require("web-push");
 
 const app = express();
+app.use(express.json({ limit: "256kb" }));
 const PORT = process.env.PORT || 3000;
 
-// ---- config: where the Android build-tools / d8 live ----
-// Set via Dockerfile ENV. Falls back to "d8" on PATH if not set.
+// ---- config: where the Android build-tools / d8 / jadx live ----
+// Set via Dockerfile ENV. Falls back to PATH lookups if not set.
 const D8_PATH = process.env.D8_PATH || "d8";
 const ANDROID_JAR = process.env.ANDROID_JAR || ""; // optional, only needed if code uses android.* APIs
+const JADX_PATH = process.env.JADX_PATH || "jadx";
 
 const upload = multer({
   dest: path.join(os.tmpdir(), "java2dex-uploads"),
   limits: { fileSize: 20 * 1024 * 1024, files: 50 }, // 20MB/file, up to 50 files
 });
+
+// Decompile inputs (.dex/.apk/.jar) run larger than plain source, allow more room
+const uploadDecompile = multer({
+  dest: path.join(os.tmpdir(), "java2dex-uploads"),
+  limits: { fileSize: 60 * 1024 * 1024, files: 5 },
+});
+
+// ---- Push notifications (Web Push) ----
+// No database here, so subscriptions live in memory only — they're wiped on
+// every restart, which on Render's free plan happens after inactivity. VAPID
+// keys are read from env if set (recommended for stability), otherwise a
+// fresh pair is generated at boot (fine since subscriptions reset together
+// with the server anyway).
+let VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+let VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+
+if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  const generated = webpush.generateVAPIDKeys();
+  VAPID_PUBLIC_KEY = generated.publicKey;
+  VAPID_PRIVATE_KEY = generated.privateKey;
+  console.log("No VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY set — generated a fresh pair for this run.");
+}
+webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+const pushSubscriptions = new Map(); // endpoint -> subscription object
 
 // ---- Web Share Target: short-lived in-memory handoff ----
 // When the installed PWA is used as an Android "Share to" target, the OS
@@ -42,8 +71,10 @@ app.use(express.static(path.join(__dirname, "public")));
 // Clean URLs for the multi-page site (GET). The existing POST /convert below
 // remains the conversion API — Express treats them as separate routes.
 app.get("/convert", (req, res) => res.sendFile(path.join(__dirname, "public", "convert.html")));
+app.get("/decompile", (req, res) => res.sendFile(path.join(__dirname, "public", "decompile.html")));
 app.get("/history", (req, res) => res.sendFile(path.join(__dirname, "public", "history.html")));
 app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help.html")));
+app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 
 // Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
 app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
@@ -206,9 +237,130 @@ function cleanup(dir) {
   fsp.rm(dir, { recursive: true, force: true }).catch(() => {});
 }
 
+// ---- Decompile: .dex / .apk / .jar / .class -> Java source (via jadx) ----
+app.post("/decompile", uploadDecompile.array("inputFiles"), async (req, res) => {
+  const jobId = uuidv4();
+  const workDir = path.join(os.tmpdir(), "java2dex-decompile-jobs", jobId);
+  const inDir = path.join(workDir, "in");
+  const outDir = path.join(workDir, "out");
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded. Attach a .dex, .apk, .jar, or .class file." });
+    }
+
+    await fsp.mkdir(inDir, { recursive: true });
+    await fsp.mkdir(outDir, { recursive: true });
+
+    const allowedExt = [".dex", ".apk", ".jar", ".class", ".aar", ".zip"];
+    const inputPaths = [];
+    for (const file of req.files) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (!allowedExt.includes(ext)) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const dest = path.join(inDir, path.basename(file.originalname));
+      await fsp.rename(file.path, dest);
+      inputPaths.push(dest);
+    }
+
+    if (inputPaths.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "No supported files found. Accepted: .dex, .apk, .jar, .class, .aar, .zip" });
+    }
+
+    // jadx: skip resource decoding (-r) since we only want Java sources here
+    const jadxArgs = ["-d", outDir, "-r", "--show-bad-code", ...inputPaths];
+    try {
+      await run(JADX_PATH, jadxArgs);
+    } catch (jadxErr) {
+      // jadx can exit non-zero yet still have produced partial/useful sources —
+      // only treat it as a hard failure if nothing was written at all.
+      const javaFilesCheck = await walkFiles(outDir, [".java"]).catch(() => []);
+      if (javaFilesCheck.length === 0) {
+        cleanup(workDir);
+        return res.status(400).json({
+          error: "Decompilation failed",
+          details: (jadxErr.stderr || jadxErr.stdout || jadxErr.message || "").slice(0, 4000),
+        });
+      }
+    }
+
+    const javaFiles = await walkFiles(outDir, [".java"]);
+    if (javaFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "jadx ran but produced no .java output." });
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", 'attachment; filename="decompiled-sources.zip"');
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+    const sourcesRoot = path.join(outDir, "sources");
+    for (const f of javaFiles) {
+      const relative = path.relative(sourcesRoot, f).split(path.sep).join("/");
+      archive.file(f, { name: relative.startsWith("..") ? path.basename(f) : relative });
+    }
+    await archive.finalize();
+    archive.on("end", () => cleanup(workDir));
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Unexpected server error", details: err.message });
+    }
+    cleanup(workDir);
+  }
+});
+
+// ---- Push notifications API ----
+app.get("/api/push/vapid-public-key", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post("/api/push/subscribe", (req, res) => {
+  const subscription = req.body && req.body.subscription;
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ error: "Missing subscription object." });
+  }
+  pushSubscriptions.set(subscription.endpoint, subscription);
+  res.json({ ok: true });
+});
+
+app.post("/api/push/unsubscribe", (req, res) => {
+  const endpoint = req.body && req.body.endpoint;
+  if (endpoint) pushSubscriptions.delete(endpoint);
+  res.json({ ok: true });
+});
+
+app.post("/api/push/test", async (req, res) => {
+  const subscription = req.body && req.body.subscription;
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ error: "Missing subscription object." });
+  }
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({
+        title: "java2dex",
+        body: "Test notification — push is working.",
+        url: "/",
+      })
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Push send failed:", err.statusCode, err.body);
+    if (err.statusCode === 404 || err.statusCode === 410) {
+      pushSubscriptions.delete(subscription.endpoint);
+    }
+    res.status(500).json({ error: "Failed to send push notification", details: err.body || err.message });
+  }
+});
+
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {
   console.log(`java2dex server listening on port ${PORT}`);
   console.log(`D8_PATH=${D8_PATH}`);
+  console.log(`JADX_PATH=${JADX_PATH}`);
 });

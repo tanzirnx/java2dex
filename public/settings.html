@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — java2dex</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="java2dex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/decompile">Decompile</a>
+        <a href="/history">History</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <a href="/settings" class="gear-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="/convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3"/><path d="M20 17H7M7 17l3-3M7 17l3 3"/></svg>Convert</a>
+    <a href="/decompile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Decompile</a>
+    <a href="/history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</a>
+    <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </div>
+</div>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px; max-width:640px;">
+    <span class="eyebrow">Settings</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">App settings</h1>
+    <p class="lede" style="margin-top:8px;">Notifications, app info, and local data — all controlled on this device only.</p>
+
+    <div class="settings-section card" style="margin-top:28px;">
+      <h3>Notifications</h3>
+      <p class="muted" style="font-size:13px; margin-bottom:4px;">Uses your browser's push service. Subscriptions live on this server's memory only and reset on server restart.</p>
+      <div class="toggle-row">
+        <div class="toggle-text">
+          <strong>Push notifications</strong>
+          <span id="notifStatusText">Checking status…</span>
+        </div>
+        <div class="switch" id="notifSwitch" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-text">
+          <strong>Send test notification</strong>
+          <span>Confirms your device can receive a push right now.</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="testPushBtn" disabled>Send test</button>
+      </div>
+    </div>
+
+    <div class="settings-section card">
+      <h3>App info</h3>
+      <div class="info-row"><span class="label">App ID</span><span class="value">com.tanzirdev.java2dex</span></div>
+      <div class="info-row"><span class="label">Display mode</span><span class="value" id="displayModeVal">browser tab</span></div>
+      <div class="info-row"><span class="label">Service worker</span><span class="value" id="swStatusVal">checking…</span></div>
+      <div class="info-row"><span class="label">Version</span><span class="value">1.0.0</span></div>
+    </div>
+
+    <div class="settings-section card">
+      <h3>Local data</h3>
+      <div class="toggle-row">
+        <div class="toggle-text">
+          <strong>Conversion &amp; decompile history</strong>
+          <span id="historyCountText">— entries stored</span>
+        </div>
+        <button class="btn btn-danger-ghost btn-sm" id="clearHistoryBtn">Clear</button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-text">
+          <strong>Offline app cache</strong>
+          <span>Cached pages, CSS, and JS used for offline loading.</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="clearCacheBtn">Refresh cache</button>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <p class="muted" style="margin-bottom:16px;">Errors, compile issues, or general questions?</p>
+      <a href="/help" class="btn btn-ghost">Open Help →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+<script src="/js/history.js"></script>
+<script>
+  // ---- app info ----
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  document.getElementById('displayModeVal').textContent = isStandalone ? 'installed app' : 'browser tab';
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      document.getElementById('swStatusVal').textContent = reg ? 'active' : 'not registered';
+    });
+  } else {
+    document.getElementById('swStatusVal').textContent = 'unsupported';
+  }
+
+  const histCount = J2DHistory.getAll().length;
+  document.getElementById('historyCountText').textContent =
+    histCount === 0 ? 'No entries stored' : histCount + ' entr' + (histCount === 1 ? 'y' : 'ies') + ' stored';
+
+  document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+    if (!confirm('Clear all conversion & decompile history?')) return;
+    J2DHistory.clear();
+    document.getElementById('historyCountText').textContent = 'No entries stored';
+    showToast('History cleared');
+  });
+
+  document.getElementById('clearCacheBtn').addEventListener('click', async () => {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+    showToast('Offline cache refreshed');
+  });
+
+  // ---- push notifications ----
+  const notifSwitch = document.getElementById('notifSwitch');
+  const notifStatusText = document.getElementById('notifStatusText');
+  const testPushBtn = document.getElementById('testPushBtn');
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function getCurrentSubscription() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+
+  async function refreshNotifState() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      notifStatusText.textContent = 'Not supported in this browser';
+      notifSwitch.classList.remove('on');
+      testPushBtn.disabled = true;
+      return;
+    }
+    const sub = await getCurrentSubscription();
+    if (sub) {
+      notifSwitch.classList.add('on');
+      notifSwitch.setAttribute('aria-checked', 'true');
+      notifStatusText.textContent = 'Enabled on this device';
+      testPushBtn.disabled = false;
+    } else {
+      notifSwitch.classList.remove('on');
+      notifSwitch.setAttribute('aria-checked', 'false');
+      notifStatusText.textContent = Notification.permission === 'denied'
+        ? 'Blocked — allow notifications in browser site settings'
+        : 'Off';
+      testPushBtn.disabled = true;
+    }
+  }
+
+  async function enableNotifications() {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('Notification permission was not granted.');
+      return;
+    }
+    const keyRes = await fetch('/api/push/vapid-public-key');
+    const { publicKey } = await keyRes.json();
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub }),
+    });
+    showToast('Notifications enabled');
+    refreshNotifState();
+  }
+
+  async function disableNotifications() {
+    const sub = await getCurrentSubscription();
+    if (sub) {
+      await fetch('/api/push/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: sub.endpoint }),
+      });
+      await sub.unsubscribe();
+    }
+    showToast('Notifications disabled');
+    refreshNotifState();
+  }
+
+  notifSwitch.addEventListener('click', async () => {
+    if (notifSwitch.classList.contains('on')) {
+      await disableNotifications();
+    } else {
+      await enableNotifications();
+    }
+  });
+  notifSwitch.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); notifSwitch.click(); }
+  });
+
+  testPushBtn.addEventListener('click', async () => {
+    const sub = await getCurrentSubscription();
+    if (!sub) { showToast('Enable notifications first.'); return; }
+    testPushBtn.disabled = true;
+    testPushBtn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/push/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub }),
+      });
+      if (res.ok) showToast('Test sent — check your notifications');
+      else showToast('Failed to send test notification');
+    } catch (e) {
+      showToast('Network error sending test notification');
+    } finally {
+      testPushBtn.disabled = false;
+      testPushBtn.textContent = 'Send test';
+    }
+  });
+
+  refreshNotifState();
+</script>
+</body>
+</html>

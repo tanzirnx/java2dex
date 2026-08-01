@@ -1,7 +1,8 @@
 {
+  "id": "com.tanzirdev.java2dex",
   "name": "java2dex — Java to DEX Converter",
   "short_name": "java2dex",
-  "description": "Compile .java source with javac and convert to Dalvik .dex bytecode, right in your browser.",
+  "description": "Compile .java source with javac and convert to Dalvik .dex bytecode, decompile DEX/APK back to Java, right in your browser.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -22,10 +23,24 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
+      "name": "Decompile",
+      "short_name": "Decompile",
+      "description": "Turn a DEX/APK/JAR back into Java source",
+      "url": "/decompile",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "History",
       "short_name": "History",
-      "description": "View past conversions",
+      "description": "View past conversions and decompiles",
       "url": "/history",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Notifications and app data",
+      "url": "/settings",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
