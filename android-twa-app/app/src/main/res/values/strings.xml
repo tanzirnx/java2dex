@@ -4,9 +4,9 @@
 
     <!-- ===== CHANGE THESE THREE TO YOUR ACTUAL RENDER DEPLOYMENT ===== -->
     <!-- Full URL the app opens, must end with / -->
-    <string name="host_url">https://YOUR-APP-NAME.onrender.com/</string>
+    <string name="host_url">https://java2dex.onrender.com/</string>
     <!-- Just the domain, no scheme, no path -->
-    <string name="host_domain">YOUR-APP-NAME.onrender.com</string>
+    <string name="host_domain">https://java2dex.onrender.com</string>
     <!-- Digital Asset Links statement — the sha256_cert_fingerprints value
          must be replaced with your release keystore's SHA-256 fingerprint.
          See README.md in this folder for the exact command to get it. -->
@@ -15,7 +15,7 @@
           \"relation\": [\"delegate_permission/common.handle_all_urls\"],
           \"target\": {
             \"namespace\": \"web\",
-            \"site\": \"https://YOUR-APP-NAME.onrender.com\"
+            \"site\": \"https://java2dex.onrender.com\"
           }
         }]
     </string>
