@@ -26,6 +26,7 @@
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/history">History</a>
+        <a href="/about">About</a>
         <a href="/help">Help</a>
       </div>
       <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
@@ -55,7 +56,12 @@
         <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Your past runs</h1>
         <p class="lede" style="margin-top:8px;">Stored only in this browser's local storage. Clearing it removes everything — nothing lives on a server.</p>
       </div>
-      <button class="btn btn-danger-ghost btn-sm" id="clearBtn">Clear history</button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" id="exportBtn">⬇ Export JSON</button>
+        <button class="btn btn-ghost btn-sm" id="importBtn">⬆ Import JSON</button>
+        <input type="file" id="importInput" accept=".json" style="display:none;" />
+        <button class="btn btn-danger-ghost btn-sm" id="clearBtn">Clear history</button>
+      </div>
     </div>
 
     <div id="historyList" style="margin-top:28px;"></div>
@@ -169,6 +175,51 @@
     J2DHistory.clear();
     render();
     showToast('History cleared');
+  });
+
+  // ---- export / import ----
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const data = J2DHistory.getAll();
+    if (data.length === 0) { showToast('No history to export'); return; }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'java2dex-history-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast('History exported');
+  });
+
+  const importInput = document.getElementById('importInput');
+  document.getElementById('importBtn').addEventListener('click', () => importInput.click());
+  importInput.addEventListener('change', () => {
+    const file = importInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        if (!Array.isArray(imported)) throw new Error('not an array');
+        const existing = J2DHistory.getAll();
+        const existingIds = new Set(existing.map(e => e.id));
+        let added = 0;
+        imported.forEach(entry => {
+          if (entry && !existingIds.has(entry.id)) {
+            existing.push(entry);
+            added++;
+          }
+        });
+        existing.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        J2DHistory._trySave(existing);
+        render();
+        showToast(added + ' entr' + (added === 1 ? 'y' : 'ies') + ' imported');
+      } catch (e) {
+        showToast('That file doesn\'t look like a valid history export.');
+      }
+    };
+    reader.readAsText(file);
+    importInput.value = '';
   });
 
   render();

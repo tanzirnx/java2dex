@@ -26,6 +26,7 @@
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/history">History</a>
+        <a href="/about">About</a>
         <a href="/help">Help</a>
       </div>
       <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
@@ -66,8 +67,9 @@
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <p>Click to choose .java files<br/>or drag &amp; drop them here</p>
+            <p style="margin-top:8px; font-size:11.5px;">.java files, or a .zip of a project</p>
           </div>
-          <input type="file" id="fileInput" accept=".java" multiple />
+          <input type="file" id="fileInput" accept=".java,.zip" multiple />
         </div>
 
         <div class="panel" id="panel-paste">
@@ -85,8 +87,21 @@
           <div id="fileList"></div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX</button>
+        <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX <span style="opacity:0.7; font-weight:400; font-size:12px;">(Ctrl+Enter)</span></button>
+        <div id="progressWrap" style="display:none; margin-top:14px;">
+          <div style="height:6px; background:var(--ink-2); border-radius:4px; overflow:hidden; border:1px solid var(--line);">
+            <div id="progressBar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--copper), var(--teal)); transition:width 0.15s;"></div>
+          </div>
+          <div id="progressLabel" style="font-size:11.5px; color:var(--muted-2); font-family:var(--font-mono); margin-top:6px;">Uploading… 0%</div>
+        </div>
         <div class="status" id="status"></div>
+        <div id="errorActions" style="display:none; margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" id="copyErrorBtn">📋 Copy all errors</button>
+        </div>
+        <div id="inspectorCard" class="card" style="display:none; margin-top:16px; background:var(--ink-2);">
+          <h3 style="margin-bottom:12px; font-size:13.5px; color:var(--teal);">Dex Inspector</h3>
+          <div id="inspectorBody" style="font-size:12.5px; font-family:var(--font-mono); color:var(--muted); line-height:1.8;"></div>
+        </div>
       </div>
 
       <div>
@@ -103,10 +118,11 @@
         <div class="card">
           <h3 style="margin-bottom:10px;">Good to know</h3>
           <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.9;">
-            <li>Up to 20MB per file, 50 files per run.</li>
+            <li>Up to 20MB per file, 50 files per run — or upload a .zip and it's auto-extracted.</li>
             <li>Android SDK classes (android.app.*, android.widget.*, etc.) compile out of the box.</li>
             <li>Files are deleted from the server right after your download starts.</li>
             <li>Successful and failed runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser.</li>
+            <li><kbd style="font-family:var(--font-mono); background:var(--panel); padding:1px 5px; border-radius:4px; border:1px solid var(--line);">Ctrl+Enter</kbd> to convert, <kbd style="font-family:var(--font-mono); background:var(--panel); padding:1px 5px; border-radius:4px; border:1px solid var(--line);">Esc</kbd> to clear the queue.</li>
           </ul>
         </div>
       </div>
@@ -123,6 +139,7 @@
 
 <script src="/js/nav.js"></script>
 <script src="/js/history.js"></script>
+<script src="/js/notify.js"></script>
 <script>
   // ---- tab switching ----
   document.querySelectorAll('.tab').forEach(tab => {
@@ -154,8 +171,9 @@
       const div = document.createElement('div');
       div.className = 'fileitem';
       const sizeKb = (entry.source.size / 1024).toFixed(1);
-      const badgeClass = entry.type === 'pasted' ? 'badge-pasted' : 'badge-file';
-      const badgeLabel = entry.type === 'pasted' ? 'pasted' : 'file';
+      const badgeMap = { pasted: 'badge-pasted', zip: 'badge-progress', file: 'badge-file' };
+      const badgeClass = badgeMap[entry.type] || 'badge-file';
+      const badgeLabel = entry.type === 'pasted' ? 'pasted' : entry.type === 'zip' ? 'zip' : 'file';
       div.innerHTML = `<span class="badge ${badgeClass}">${badgeLabel}</span><span class="name">${entry.name}</span><span class="size">${sizeKb} KB</span>`;
       const btn = document.createElement('button');
       btn.className = 'remove';
@@ -184,7 +202,9 @@
   function addUploadedFiles(fileListObj) {
     let added = 0;
     for (const f of fileListObj) {
-      if (f.name.endsWith('.java')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      const lower = f.name.toLowerCase();
+      if (lower.endsWith('.java')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      else if (lower.endsWith('.zip')) { selectedFiles.push({ name: f.name, source: f, type: 'zip' }); added++; }
     }
     renderFileList();
     if (added) showToast(added + ' file' + (added > 1 ? 's' : '') + ' added to queue');
@@ -246,28 +266,130 @@
     ['stage-source', 'stage-compile', 'stage-dex'].forEach(id => setStage(id, 'idle'));
   }
 
-  convertBtn.addEventListener('click', async () => {
+  let lastErrorText = '';
+
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressLabel = document.getElementById('progressLabel');
+  const errorActions = document.getElementById('errorActions');
+  const copyErrorBtn = document.getElementById('copyErrorBtn');
+  const inspectorCard = document.getElementById('inspectorCard');
+  const inspectorBody = document.getElementById('inspectorBody');
+
+  function renderErrorDetail(errJson) {
+    errorActions.style.display = 'none';
+    lastErrorText = '';
+
+    const baseMsg = errJson.error || 'Conversion failed';
+    const rawDetails = errJson.details || '';
+    lastErrorText = baseMsg + (rawDetails ? '\n\n' + rawDetails : '');
+
+    if (errJson.parsedErrors && errJson.parsedErrors.length) {
+      let html = `<strong style="color:var(--danger);">${escapeHtmlLocal(baseMsg)}</strong><div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">`;
+      errJson.parsedErrors.slice(0, 30).forEach(e => {
+        html += `<div style="border-left:2px solid var(--danger); padding-left:10px;">
+          <div style="font-family:var(--font-mono); font-size:12px; color:var(--muted);">${escapeHtmlLocal(e.file)}:${e.line} · ${e.level}</div>
+          <div>${escapeHtmlLocal(e.message)}</div>
+        </div>`;
+      });
+      if (errJson.parsedErrors.length > 30) html += `<div class="muted" style="font-size:12px;">…and ${errJson.parsedErrors.length - 30} more. Use "Copy all errors" for the full list.</div>`;
+      html += '</div>';
+      statusEl.innerHTML = html;
+      statusEl.className = 'status show error';
+    } else {
+      showStatus(lastErrorText, 'error');
+    }
+
+    if (lastErrorText) errorActions.style.display = 'block';
+  }
+
+  function escapeHtmlLocal(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  copyErrorBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(lastErrorText);
+      showToast('Error copied to clipboard');
+    } catch (e) {
+      showToast('Could not copy — select and copy manually');
+    }
+  });
+
+  function renderInspector(headers, dexBlob) {
+    const classCount = headers.get('X-Compiled-Class-Count');
+    const classesRaw = headers.get('X-Compiled-Classes');
+    const dexCount = headers.get('X-Dex-File-Count');
+    if (!classCount) { inspectorCard.style.display = 'none'; return; }
+
+    const classNames = classesRaw ? decodeURIComponent(classesRaw).split(',').filter(Boolean) : [];
+    const multidex = parseInt(dexCount, 10) > 1;
+
+    let html = `
+      <div>Classes compiled: <strong style="color:var(--text);">${classCount}</strong></div>
+      <div>Dex files: <strong style="color:var(--text);">${dexCount}</strong>${multidex ? ' <span class="badge badge-progress" style="margin-left:6px;">multidex</span>' : ''}</div>
+      <div>Output size: <strong style="color:var(--text);">${(dexBlob.size / 1024).toFixed(1)} KB</strong></div>`;
+    if (classNames.length) {
+      html += `<div style="margin-top:8px; color:var(--muted-2);">${classNames.slice(0, 15).map(escapeHtmlLocal).join(', ')}${classNames.length > 15 ? ', …' : ''}</div>`;
+    }
+    inspectorBody.innerHTML = html;
+    inspectorCard.style.display = 'block';
+  }
+
+  function xhrUpload(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.responseType = 'blob';
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      });
+      xhr.onload = () => resolve(xhr);
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
+    });
+  }
+
+  async function runConvert() {
     if (selectedFiles.length === 0) return;
     convertBtn.disabled = true;
     resetStages();
+    inspectorCard.style.display = 'none';
+    errorActions.style.display = 'none';
     setStage('stage-source', 'done');
     setStage('stage-compile', 'active');
-    showStatus('Compiling & converting...', 'info');
+    showStatus('Uploading…', 'info');
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressLabel.textContent = 'Uploading… 0%';
+
+    j2dEnsureNotifyPermission();
+    j2dNotify('java2dex', 'Converting your file(s)…', null);
 
     const formData = new FormData();
     selectedFiles.forEach(entry => formData.append('javaFiles', entry.source, entry.name));
-
     const inputFilesMeta = selectedFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
 
     try {
-      const res = await fetch('/convert', { method: 'POST', body: formData });
+      const xhr = await xhrUpload('/convert', formData, (pct) => {
+        progressBar.style.width = pct + '%';
+        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Compiling & converting…';
+        if (pct >= 100) showStatus('Compiling & converting...', 'info');
+      });
+      progressWrap.style.display = 'none';
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        const msg = (errJson.error || 'Conversion failed') + (errJson.details ? '\n\n' + errJson.details : '');
-        showStatus(msg, 'error');
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const text = await xhr.response.text();
+        let errJson = {};
+        try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Conversion failed', details: text }; }
+
+        renderErrorDetail(errJson);
         setStage('stage-compile', 'idle');
         setStage('stage-dex', 'idle');
+
+        j2dNotify('java2dex — failed', errJson.error || 'Conversion failed', null);
 
         J2DHistory.add({
           inputFiles: inputFilesMeta,
@@ -282,12 +404,13 @@
       setStage('stage-compile', 'done');
       setStage('stage-dex', 'active');
 
-      const blob = await res.blob();
-      const disposition = res.headers.get('Content-Disposition') || '';
+      const blob = xhr.response;
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
       const match = disposition.match(/filename="(.+)"/);
       const filename = match ? match[1] : 'classes.dex';
 
       setStage('stage-dex', 'done');
+      renderInspector({ get: (h) => xhr.getResponseHeader(h) }, blob);
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -299,7 +422,7 @@
       URL.revokeObjectURL(url);
 
       showStatus(`Done — downloaded ${filename}`, 'success');
-      showToast('Saved to History');
+      j2dNotify('java2dex — done ✓', `Downloaded ${filename}`, 'Saved to History');
 
       const historyEntry = {
         inputFiles: inputFilesMeta,
@@ -313,11 +436,33 @@
       J2DHistory.add(historyEntry);
 
     } catch (err) {
+      progressWrap.style.display = 'none';
       showStatus('Network error: ' + err.message, 'error');
+      lastErrorText = 'Network error: ' + err.message;
+      errorActions.style.display = 'block';
       resetStages();
+      j2dNotify('java2dex — error', 'Network error during conversion', null);
       J2DHistory.add({ inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
     } finally {
       convertBtn.disabled = false;
+    }
+  }
+
+  convertBtn.addEventListener('click', runConvert);
+
+  // ---- keyboard shortcuts ----
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!convertBtn.disabled) runConvert();
+    } else if (e.key === 'Escape') {
+      const active = document.activeElement;
+      const isTyping = active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT');
+      if (!isTyping && selectedFiles.length) {
+        selectedFiles = [];
+        renderFileList();
+        showToast('Queue cleared');
+      }
     }
   });
 

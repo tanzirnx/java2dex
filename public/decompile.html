@@ -26,6 +26,7 @@
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/history">History</a>
+        <a href="/about">About</a>
         <a href="/help">Help</a>
       </div>
       <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
@@ -70,7 +71,20 @@
         </div>
 
         <button class="btn btn-primary btn-block" id="decompileBtn" disabled style="margin-top:20px;">Decompile to Java</button>
+        <div id="progressWrap" style="display:none; margin-top:14px;">
+          <div style="height:6px; background:var(--ink-2); border-radius:4px; overflow:hidden; border:1px solid var(--line);">
+            <div id="progressBar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--copper), var(--teal)); transition:width 0.15s;"></div>
+          </div>
+          <div id="progressLabel" style="font-size:11.5px; color:var(--muted-2); font-family:var(--font-mono); margin-top:6px;">Uploading… 0%</div>
+        </div>
         <div class="status" id="status"></div>
+        <div id="errorActions" style="display:none; margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" id="copyErrorBtn">📋 Copy all errors</button>
+        </div>
+        <div id="inspectorCard" class="card" style="display:none; margin-top:16px; background:var(--ink-2);">
+          <h3 style="margin-bottom:12px; font-size:13.5px; color:var(--teal);">Output</h3>
+          <div id="inspectorBody" style="font-size:12.5px; font-family:var(--font-mono); color:var(--muted); line-height:1.8;"></div>
+        </div>
       </div>
 
       <div>
@@ -107,6 +121,7 @@
 
 <script src="/js/nav.js"></script>
 <script src="/js/history.js"></script>
+<script src="/js/notify.js"></script>
 <script>
   let selectedFiles = [];
 
@@ -181,31 +196,77 @@
     el.style.borderColor = mode === 'active' ? 'var(--copper)' : mode === 'done' ? 'var(--teal)' : 'var(--line)';
   }
 
-  decompileBtn.addEventListener('click', async () => {
+  let lastErrorText = '';
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressLabel = document.getElementById('progressLabel');
+  const errorActions = document.getElementById('errorActions');
+  const copyErrorBtn = document.getElementById('copyErrorBtn');
+  const inspectorCard = document.getElementById('inspectorCard');
+  const inspectorBody = document.getElementById('inspectorBody');
+
+  copyErrorBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(lastErrorText); showToast('Error copied to clipboard'); }
+    catch (e) { showToast('Could not copy — select and copy manually'); }
+  });
+
+  function xhrUpload(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.responseType = 'blob';
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      });
+      xhr.onload = () => resolve(xhr);
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
+    });
+  }
+
+  async function runDecompile() {
     if (selectedFiles.length === 0) return;
     decompileBtn.disabled = true;
     setStage('stage-source', 'done');
     setStage('stage-decompile', 'active');
     setStage('stage-output', 'idle');
-    showStatus('Decompiling with jadx...', 'info');
+    inspectorCard.style.display = 'none';
+    errorActions.style.display = 'none';
+    showStatus('Uploading…', 'info');
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+
+    j2dEnsureNotifyPermission();
+    j2dNotify('java2dex', 'Decompiling your file(s)…', null);
 
     const formData = new FormData();
     selectedFiles.forEach(f => formData.append('inputFiles', f, f.name));
     const inputFilesMeta = selectedFiles.map(f => ({ name: f.name, size: f.size, kind: 'file' }));
 
     try {
-      const res = await fetch('/decompile', { method: 'POST', body: formData });
+      const xhr = await xhrUpload('/decompile', formData, (pct) => {
+        progressBar.style.width = pct + '%';
+        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Decompiling with jadx…';
+        if (pct >= 100) showStatus('Decompiling with jadx...', 'info');
+      });
+      progressWrap.style.display = 'none';
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        const msg = (errJson.error || 'Decompilation failed') + (errJson.details ? '\n\n' + errJson.details : '');
-        showStatus(msg, 'error');
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const text = await xhr.response.text();
+        let errJson = {};
+        try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Decompilation failed', details: text }; }
+        lastErrorText = (errJson.error || 'Decompilation failed') + (errJson.details ? '\n\n' + errJson.details : '');
+        showStatus(lastErrorText, 'error');
+        errorActions.style.display = 'block';
         setStage('stage-decompile', 'idle');
+
+        j2dNotify('java2dex — failed', errJson.error || 'Decompilation failed', null);
+
         J2DHistory.add({
           kind: 'decompile',
           inputFiles: inputFilesMeta,
           status: 'error',
-          errorMessage: (errJson.error || 'Decompilation failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : ''),
+          errorMessage: lastErrorText.slice(0, 400),
         });
         decompileBtn.disabled = false;
         return;
@@ -214,12 +275,18 @@
       setStage('stage-decompile', 'done');
       setStage('stage-output', 'active');
 
-      const blob = await res.blob();
-      const disposition = res.headers.get('Content-Disposition') || '';
+      const blob = xhr.response;
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
       const match = disposition.match(/filename="(.+)"/);
       const filename = match ? match[1] : 'decompiled-sources.zip';
+      const javaFileCount = xhr.getResponseHeader('X-Java-File-Count');
 
       setStage('stage-output', 'done');
+
+      if (javaFileCount) {
+        inspectorBody.innerHTML = `<div>Java files produced: <strong style="color:var(--text);">${javaFileCount}</strong></div><div>Output size: <strong style="color:var(--text);">${(blob.size / 1024).toFixed(1)} KB</strong></div>`;
+        inspectorCard.style.display = 'block';
+      }
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -228,7 +295,7 @@
       URL.revokeObjectURL(url);
 
       showStatus(`Done — downloaded ${filename}`, 'success');
-      showToast('Saved to History');
+      j2dNotify('java2dex — done ✓', `Downloaded ${filename}`, 'Saved to History');
 
       const historyEntry = {
         kind: 'decompile',
@@ -243,11 +310,26 @@
       J2DHistory.add(historyEntry);
 
     } catch (err) {
+      progressWrap.style.display = 'none';
       showStatus('Network error: ' + err.message, 'error');
+      lastErrorText = 'Network error: ' + err.message;
+      errorActions.style.display = 'block';
       setStage('stage-decompile', 'idle');
+      j2dNotify('java2dex — error', 'Network error during decompile', null);
       J2DHistory.add({ kind: 'decompile', inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
     } finally {
       decompileBtn.disabled = false;
+    }
+  }
+
+  decompileBtn.addEventListener('click', runDecompile);
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!decompileBtn.disabled) runDecompile();
+    } else if (e.key === 'Escape') {
+      if (selectedFiles.length) { selectedFiles = []; renderFileList(); showToast('Queue cleared'); }
     }
   });
 </script>

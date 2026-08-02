@@ -9,6 +9,7 @@ const fsp = fs.promises;
 const path = require("path");
 const os = require("os");
 const webpush = require("web-push");
+const AdmZip = require("adm-zip");
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
@@ -75,6 +76,7 @@ app.get("/decompile", (req, res) => res.sendFile(path.join(__dirname, "public", 
 app.get("/history", (req, res) => res.sendFile(path.join(__dirname, "public", "history.html")));
 app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help.html")));
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
 
 // Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
 app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
@@ -138,6 +140,60 @@ async function walkFiles(dir, exts) {
   return out;
 }
 
+// Parses raw javac stderr into a structured list: [{ file, line, level, message }]
+// Falls back gracefully — if a line doesn't match the usual "path:line: error: msg"
+// shape, it's kept as a plain message so nothing gets silently dropped.
+function parseJavacErrors(rawOutput) {
+  if (!rawOutput) return [];
+  const lines = rawOutput.split("\n");
+  const results = [];
+  const lineRe = /^(.+\.java):(\d+):\s*(error|warning):\s*(.+)$/;
+
+  for (const line of lines) {
+    const m = line.match(lineRe);
+    if (m) {
+      results.push({
+        file: path.basename(m[1]),
+        line: parseInt(m[2], 10),
+        level: m[3],
+        message: m[4].trim(),
+      });
+    } else if (line.trim() && !/^\d+ errors?$/.test(line.trim()) && !/^\^\s*$/.test(line) && !line.startsWith(" ") && results.length > 0) {
+      // continuation lines / summary lines are folded into the previous entry when useful, otherwise ignored
+    }
+  }
+  return results;
+}
+
+// Extracts a zip's .java entries into destDir (flat), returning extracted file paths.
+// Silently ignores non-.java entries and directories; de-duplicates name collisions.
+function extractJavaFromZip(zipPath, destDir) {
+  const zip = new AdmZip(zipPath);
+  const entries = zip.getEntries();
+  const written = [];
+  const usedNames = new Set();
+
+  for (const entry of entries) {
+    if (entry.isDirectory) continue;
+    if (!entry.entryName.toLowerCase().endsWith(".java")) continue;
+
+    let baseName = path.basename(entry.entryName);
+    let finalName = baseName;
+    let counter = 1;
+    while (usedNames.has(finalName)) {
+      const ext = path.extname(baseName);
+      finalName = `${path.basename(baseName, ext)}_${counter}${ext}`;
+      counter++;
+    }
+    usedNames.add(finalName);
+
+    const outPath = path.join(destDir, finalName);
+    fs.writeFileSync(outPath, entry.getData());
+    written.push(outPath);
+  }
+  return written;
+}
+
 app.post("/convert", upload.array("javaFiles"), async (req, res) => {
   const jobId = uuidv4();
   const workDir = path.join(os.tmpdir(), "java2dex-jobs", jobId);
@@ -147,24 +203,42 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
 
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: "No files uploaded. Attach one or more .java files." });
+      return res.status(400).json({ error: "No files uploaded. Attach one or more .java files, or a .zip project." });
     }
 
     await fsp.mkdir(srcDir, { recursive: true });
     await fsp.mkdir(classDir, { recursive: true });
     await fsp.mkdir(dexDir, { recursive: true });
 
-    // Move uploaded files into srcDir, preserving original filenames
+    // Move uploaded files into srcDir, preserving original filenames.
+    // .zip uploads are extracted (only .java entries kept, flattened).
     const javaFilePaths = [];
     for (const file of req.files) {
-      if (!file.originalname.endsWith(".java")) continue;
+      const lowerName = file.originalname.toLowerCase();
+
+      if (lowerName.endsWith(".zip")) {
+        try {
+          const extracted = extractJavaFromZip(file.path, srcDir);
+          javaFilePaths.push(...extracted);
+        } catch (zipErr) {
+          console.warn("Zip extraction failed for", file.originalname, zipErr.message);
+        }
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+
+      if (!lowerName.endsWith(".java")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
       const dest = path.join(srcDir, path.basename(file.originalname));
       await fsp.rename(file.path, dest);
       javaFilePaths.push(dest);
     }
 
     if (javaFilePaths.length === 0) {
-      return res.status(400).json({ error: "No .java files found in upload. Only .java files are accepted." });
+      cleanup(workDir);
+      return res.status(400).json({ error: "No .java files found. Attach .java files directly, or a .zip containing them." });
     }
 
     // 1. Compile with javac
@@ -177,23 +251,30 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
     try {
       await run("javac", javacArgs);
     } catch (compileErr) {
+      cleanup(workDir);
+      const rawDetails = compileErr.stderr || compileErr.message || "";
       return res.status(400).json({
         error: "Java compilation failed",
-        details: compileErr.stderr || compileErr.message,
+        details: rawDetails,
+        parsedErrors: parseJavacErrors(rawDetails),
+        filesAttempted: javaFilePaths.map((p) => path.basename(p)),
       });
     }
 
-    // 2. Collect .class files
+    // 2. Collect .class files (also used for the "compiled classes" inspector info)
     const classFiles = await walkFiles(classDir, [".class"]);
     if (classFiles.length === 0) {
+      cleanup(workDir);
       return res.status(400).json({ error: "Compilation produced no .class files." });
     }
+    const classNames = classFiles.map((f) => path.relative(classDir, f).replace(/\.class$/, "").split(path.sep).join("."));
 
     // 3. Convert to DEX with d8
     const d8Args = ["--output", dexDir, ...classFiles];
     try {
       await run(D8_PATH, d8Args);
     } catch (dexErr) {
+      cleanup(workDir);
       return res.status(500).json({
         error: "DEX conversion failed",
         details: dexErr.stderr || dexErr.message,
@@ -202,8 +283,16 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
 
     const dexFiles = await walkFiles(dexDir, [".dex"]);
     if (dexFiles.length === 0) {
+      cleanup(workDir);
       return res.status(500).json({ error: "d8 ran but produced no .dex output." });
     }
+
+    // Inspector metadata surfaced via headers (binary body can't carry JSON alongside it)
+    const inspectorClasses = encodeURIComponent(classNames.slice(0, 200).join(","));
+    res.setHeader("X-Compiled-Class-Count", String(classNames.length));
+    res.setHeader("X-Compiled-Classes", inspectorClasses);
+    res.setHeader("X-Dex-File-Count", String(dexFiles.length));
+    res.setHeader("Access-Control-Expose-Headers", "X-Compiled-Class-Count, X-Compiled-Classes, X-Dex-File-Count, Content-Disposition");
 
     // 4. If only one classes.dex, send it directly. Otherwise zip (multidex case).
     if (dexFiles.length === 1) {
@@ -295,6 +384,8 @@ app.post("/decompile", uploadDecompile.array("inputFiles"), async (req, res) => 
 
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", 'attachment; filename="decompiled-sources.zip"');
+    res.setHeader("X-Java-File-Count", String(javaFiles.length));
+    res.setHeader("Access-Control-Expose-Headers", "X-Java-File-Count, Content-Disposition");
     const archive = archiver("zip", { zlib: { level: 9 } });
     archive.pipe(res);
     const sourcesRoot = path.join(outDir, "sources");

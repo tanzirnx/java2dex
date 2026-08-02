@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About — java2dex</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="java2dex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/decompile">Decompile</a>
+        <a href="/history">History</a>
+        <a href="/about">About</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <a href="/settings" class="gear-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="/convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3"/><path d="M20 17H7M7 17l3-3M7 17l3 3"/></svg>Convert</a>
+    <a href="/decompile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Decompile</a>
+    <a href="/history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</a>
+    <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </div>
+</div>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px; max-width:760px;">
+    <span class="eyebrow">About</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">What java2dex is</h1>
+    <p class="lede" style="margin-top:8px;">A small, free tool that runs the real Android build pipeline — javac, d8, jadx — entirely in a browser tab, for people who need a quick conversion without opening a full IDE.</p>
+
+    <div class="card" style="margin-top:28px;">
+      <h3 style="margin-bottom:12px;">What it does</h3>
+      <div class="loglist">
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Convert</strong><span>.java source → compiled .dex bytecode, via javac then d8. Upload files, a .zip project, or paste code directly.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Decompile</strong><span>.dex / .apk / .jar / .class → readable .java source, via jadx.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>History</strong><span>Every run is logged locally in your browser — never on a server database.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Installable</strong><span>Works as a PWA — installable on desktop and Android, with offline shell caching and Android share-target support.</span></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:12px;">Built with</h3>
+      <div class="info-row"><span class="label">Backend</span><span class="value">Node.js, Express</span></div>
+      <div class="info-row"><span class="label">Compiler</span><span class="value">javac (OpenJDK)</span></div>
+      <div class="info-row"><span class="label">Dexer</span><span class="value">d8 (Android build-tools)</span></div>
+      <div class="info-row"><span class="label">Decompiler</span><span class="value">jadx</span></div>
+      <div class="info-row"><span class="label">Notifications</span><span class="value">Web Push (web-push)</span></div>
+      <div class="info-row"><span class="label">Hosting</span><span class="value">Render (Docker, free tier)</span></div>
+      <div class="info-row"><span class="label">Cost</span><span class="value">Free — no account, no paid dependencies</span></div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h3 style="margin-bottom:4px;">App prompt</h3>
+          <p class="muted" style="font-size:13px;">A plain-text description of this app — paste it into any AI assistant (or share with a teammate) so it immediately understands what java2dex does and how to use it.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="copyPromptBtn" style="flex-shrink:0;">📋 Copy prompt</button>
+      </div>
+      <pre id="appPrompt" style="margin-top:14px; padding:16px; background:var(--ink-2); border:1px solid var(--line); border-radius:10px; font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--muted); white-space:pre-wrap; max-height:400px; overflow-y:auto;">java2dex is a free web app (also installable as a PWA) at this URL that converts between Java source and Android DEX bytecode. It has these pages:
+
+- /convert — Upload one or more .java files (drag-and-drop or file picker), upload a .zip of a Java project (auto-extracted), or paste code directly into a textarea. Multiple files can be queued and compiled together in one pass. Clicking "Convert to DEX" sends them to POST /convert as multipart/form-data (field name "javaFiles"), where the server runs javac (with android.jar on the classpath, so android.* APIs work) then d8, and returns classes.dex (or a zip of multiple dex files for multidex output) as a file download.
+
+- /decompile — Upload a .dex, .apk, .jar, .class, .aar, or .zip file. Sent to POST /decompile (field name "inputFiles"), the server runs jadx and returns a .zip of decompiled .java source files.
+
+- /history — Shows every past convert/decompile run, stored only in the browser's localStorage (metadata always, plus the output file itself if under ~350KB for re-download). Supports export/import as JSON, delete individual entries, and clear all.
+
+- /settings — Toggle push notifications (Web Push API) and local per-action alerts, view app/install info, clear local history or offline cache.
+
+- /help — Explains the compile/dex/decompile pipeline and lists fixes for common errors (missing android.jar symbols, filename/class-name mismatches, missing dependency classes, multidex limits).
+
+- /about — This page: what the app does, the tech stack, and this prompt.
+
+Known limits: Convert accepts up to 20MB per file / 50 files per run. Decompile accepts up to 60MB per file / 5 files per run. Only plain Java + core android.* SDK classes compile — no AndroidX/Jetpack, no third-party libraries, no generated R class resources, since there's no full Gradle build behind it. If you're helping someone use this app, guide them to /convert for source→bytecode or /decompile for bytecode→source, and mention the size limits and the AndroidX/R-class limitation if relevant.</pre>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+<script>
+  document.getElementById('copyPromptBtn').addEventListener('click', async () => {
+    const text = document.getElementById('appPrompt').textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Prompt copied to clipboard');
+    } catch (e) {
+      showToast('Could not copy — select the text manually');
+    }
+  });
+</script>
+</body>
+</html>

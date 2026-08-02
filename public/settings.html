@@ -26,6 +26,7 @@
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/history">History</a>
+        <a href="/about">About</a>
         <a href="/help">Help</a>
       </div>
       <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
@@ -58,6 +59,13 @@
       <p class="muted" style="font-size:13px; margin-bottom:4px;">Uses your browser's push service. Subscriptions live on this server's memory only and reset on server restart.</p>
       <div class="toggle-row">
         <div class="toggle-text">
+          <strong>Convert / decompile alerts</strong>
+          <span>Local notification when a run starts, succeeds, or fails — no server needed.</span>
+        </div>
+        <div class="switch" id="alertsSwitch" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-text">
           <strong>Push notifications</strong>
           <span id="notifStatusText">Checking status…</span>
         </div>
@@ -70,6 +78,15 @@
         </div>
         <button class="btn btn-ghost btn-sm" id="testPushBtn" disabled>Send test</button>
       </div>
+    </div>
+
+    <div class="settings-section card">
+      <h3>Install on another device</h3>
+      <p class="muted" style="font-size:13px; margin-bottom:16px;">Scan this on your phone to open (and install) java2dex there too.</p>
+      <div style="display:flex; justify-content:center; padding:16px; background:#fff; border-radius:10px; max-width:220px; margin:0 auto;">
+        <img id="installQr" alt="QR code to install java2dex" width="180" height="180" />
+      </div>
+      <p class="muted" style="font-size:12px; text-align:center; margin-top:12px; font-family:var(--font-mono);" id="installUrlText"></p>
     </div>
 
     <div class="settings-section card">
@@ -114,10 +131,33 @@
 
 <script src="/js/nav.js"></script>
 <script src="/js/history.js"></script>
+<script src="/js/notify.js"></script>
 <script>
   // ---- app info ----
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   document.getElementById('displayModeVal').textContent = isStandalone ? 'installed app' : 'browser tab';
+
+  // ---- install QR code (points at this deployment's own origin) ----
+  const installUrl = window.location.origin + '/';
+  document.getElementById('installUrlText').textContent = installUrl;
+  document.getElementById('installQr').src =
+    'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=' + encodeURIComponent(installUrl);
+
+  // ---- local convert/decompile alerts toggle ----
+  const alertsSwitch = document.getElementById('alertsSwitch');
+  function refreshAlertsSwitch() {
+    if (j2dAlertsEnabled()) { alertsSwitch.classList.add('on'); alertsSwitch.setAttribute('aria-checked', 'true'); }
+    else { alertsSwitch.classList.remove('on'); alertsSwitch.setAttribute('aria-checked', 'false'); }
+  }
+  alertsSwitch.addEventListener('click', async () => {
+    const next = !j2dAlertsEnabled();
+    if (next) await j2dEnsureNotifyPermission();
+    j2dSetAlertsEnabled(next);
+    refreshAlertsSwitch();
+    showToast(next ? 'Convert/decompile alerts on' : 'Convert/decompile alerts off');
+  });
+  alertsSwitch.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alertsSwitch.click(); } });
+  refreshAlertsSwitch();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(reg => {
