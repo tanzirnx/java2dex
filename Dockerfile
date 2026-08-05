@@ -43,6 +43,29 @@ RUN mkdir -p /opt/jadx && \
 ENV PATH="/opt/jadx/bin:${PATH}"
 ENV JADX_PATH="/opt/jadx/bin/jadx"
 
+# ---- AndroidX / Material classes (optional, best-effort) ----
+# Extracts classes.jar out of a few common AAR artifacts so code referencing
+# androidx.* / com.google.android.material.* can compile too. Each download
+# is independent and allowed to fail (`|| true`) — a network hiccup on one
+# artifact won't break the whole image build; server.js just uses whatever
+# jars actually made it into this directory.
+ENV ANDROIDX_LIBS_DIR=/opt/androidx-libs
+RUN mkdir -p ${ANDROIDX_LIBS_DIR} /tmp/androidx-fetch && cd /tmp/androidx-fetch && \
+    ( wget -q https://maven.google.com/androidx/appcompat/appcompat/1.7.0/appcompat-1.7.0.aar -O appcompat.aar && \
+      unzip -p appcompat.aar classes.jar > ${ANDROIDX_LIBS_DIR}/appcompat.jar ) || true && \
+    ( wget -q https://maven.google.com/androidx/core/core/1.13.1/core-1.13.1.aar -O core.aar && \
+      unzip -p core.aar classes.jar > ${ANDROIDX_LIBS_DIR}/core.jar ) || true && \
+    ( wget -q https://maven.google.com/androidx/recyclerview/recyclerview/1.3.2/recyclerview-1.3.2.aar -O recyclerview.aar && \
+      unzip -p recyclerview.aar classes.jar > ${ANDROIDX_LIBS_DIR}/recyclerview.jar ) || true && \
+    ( wget -q https://maven.google.com/androidx/constraintlayout/constraintlayout/2.1.4/constraintlayout-2.1.4.aar -O constraintlayout.aar && \
+      unzip -p constraintlayout.aar classes.jar > ${ANDROIDX_LIBS_DIR}/constraintlayout.jar ) || true && \
+    ( wget -q https://maven.google.com/com/google/android/material/material/1.12.0/material-1.12.0.aar -O material.aar && \
+      unzip -p material.aar classes.jar > ${ANDROIDX_LIBS_DIR}/material.jar ) || true && \
+    ( wget -q https://maven.google.com/androidx/annotation/annotation/1.8.2/annotation-1.8.2.jar -O ${ANDROIDX_LIBS_DIR}/annotation.jar ) || true && \
+    cd / && rm -rf /tmp/androidx-fetch && \
+    find ${ANDROIDX_LIBS_DIR} -type f -size -1k -delete && \
+    echo "AndroidX jars present:" && ls -la ${ANDROIDX_LIBS_DIR} || true
+
 # ---- App setup ----
 WORKDIR /app
 COPY package.json ./

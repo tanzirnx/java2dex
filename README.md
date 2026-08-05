@@ -51,7 +51,18 @@ Powered by [jadx](https://github.com/skylot/jadx), pinned to a specific version 
 
 Decompiled output is best-effort: variable/method names are regenerated, and heavily obfuscated or R8-minified code may come back partial. Only decompile code you have the right to inspect.
 
-## Deploy to Render (free plan)
+## Advanced features (v2)
+
+- **Manual multidex control** — Convert page → "Advanced (multidex)": specify which classes must land in the primary dex (`--main-dex-list`) and a `--min-api` value, passed straight to d8.
+- **AndroidX / Material classpath** — the Dockerfile pulls classes.jar out of a few common AARs (appcompat, core, recyclerview, constraintlayout, material) at build time into `/opt/androidx-libs`; `server.js` scans that folder and adds whatever's present to `javac`'s classpath automatically. Each download is independent and allowed to fail without breaking the build — missing artifacts are just skipped.
+- **Live syntax check** — the paste editor shows a lightweight brace/paren/bracket/string balance check as you type (client-side only, not a full parser — catches the common typo-level mistakes before a round-trip to the server).
+- **Compile mode: Together / Separately** — "Together" (default) compiles the whole queue as one unit so files can reference each other. "Separately" sends each queued file/zip as its own independent `/convert` call and shows a per-item results list with individual downloads.
+- **Dark/Light theme** — toggle in the nav, persisted in `localStorage`, applied via a tiny blocking script in `<head>` so there's no flash of the wrong theme on load.
+- **Code templates** — quick-insert boilerplate (Activity, Dialog, Fragment, POJO, RecyclerView Adapter) into the paste editor.
+- **Drag-to-reorder** — queue items can be dragged to change their order.
+- **Public API** — `/api-docs` documents `POST /convert`, `POST /decompile`, and `GET /health` with curl examples; no API key needed, it's the same endpoints the UI itself calls.
+
+
 
 1. Push this folder to a new GitHub repo.
 2. On [render.com](https://render.com) → **New +** → **Web Service** → connect the repo.

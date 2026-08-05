@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>API Docs — java2dex</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+<style>
+  .endpoint { margin-bottom: 32px; }
+  .endpoint-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .method { font-family:var(--font-mono); font-size:12px; font-weight:700; padding:3px 9px; border-radius:5px; }
+  .method-post { background: rgba(232,150,59,0.15); color: var(--copper); }
+  .method-get { background: rgba(79,209,184,0.15); color: var(--teal); }
+  .endpoint-path { font-family:var(--font-mono); font-size:14.5px; }
+  pre.code-block { background: var(--ink-2); border:1px solid var(--line); border-radius:10px; padding:16px; overflow-x:auto; font-family:var(--font-mono); font-size:12.5px; line-height:1.7; color: var(--text); }
+  pre.code-block .cm { color: var(--muted-2); }
+  table.params { width:100%; border-collapse: collapse; margin-top:10px; font-size:13px; }
+  table.params th, table.params td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  table.params th { color:var(--muted); font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/decompile">Decompile</a>
+        <a href="/history">History</a>
+        <a href="/about">About</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <button class="theme-btn" id="themeToggleBtn" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <a href="/settings" class="gear-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="/convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3"/><path d="M20 17H7M7 17l3-3M7 17l3 3"/></svg>Convert</a>
+    <a href="/decompile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Decompile</a>
+    <a href="/history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</a>
+    <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </div>
+</div>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px; max-width:780px;">
+    <span class="eyebrow">API</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Use java2dex from your own scripts</h1>
+    <p class="lede" style="margin-top:8px;">The same endpoints the web UI calls are open — no API key, no auth. Call them directly with curl, Postman, or any HTTP client. Rate limits are whatever Render's free plan allows; be reasonable.</p>
+
+    <div class="endpoint card" style="margin-top:32px;">
+      <div class="endpoint-head"><span class="method method-post">POST</span><span class="endpoint-path">/convert</span></div>
+      <p class="muted" style="margin-bottom:14px;">Compile .java source (or a .zip of one) to DEX bytecode.</p>
+      <pre class="code-block"><span class="cm"># basic — one file</span>
+curl -X POST https://YOUR-APP.onrender.com/convert \
+  -F "javaFiles=@MyClass.java" \
+  -o classes.dex
+
+<span class="cm"># multiple files, compiled together</span>
+curl -X POST https://YOUR-APP.onrender.com/convert \
+  -F "javaFiles=@A.java" \
+  -F "javaFiles=@B.java" \
+  -o dex-output.zip   <span class="cm"># .zip only if multidex output</span>
+
+<span class="cm"># a .zip project (auto-extracted server-side)</span>
+curl -X POST https://YOUR-APP.onrender.com/convert \
+  -F "javaFiles=@project.zip" \
+  -o classes.dex
+
+<span class="cm"># with manual multidex control</span>
+curl -X POST https://YOUR-APP.onrender.com/convert \
+  -F "javaFiles=@MainActivity.java" \
+  -F "mainDexClasses=MainActivity,MyApplication" \
+  -F "minApi=19" \
+  -o classes.dex</pre>
+
+      <table class="params">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>javaFiles</code></td><td>file(s)</td><td>One or more .java files, and/or a single .zip. Repeat the field for multiple files.</td></tr>
+        <tr><td><code>mainDexClasses</code></td><td>text</td><td>Optional. Comma/newline-separated class names to force into the primary dex.</td></tr>
+        <tr><td><code>minApi</code></td><td>text</td><td>Optional. Passed to d8 as <code>--min-api</code>.</td></tr>
+      </table>
+
+      <p class="muted" style="margin-top:14px; margin-bottom:6px; font-size:13px;">Response (success): binary — <code>classes.dex</code> if one output file, else a <code>.zip</code>. Useful headers:</p>
+      <table class="params">
+        <tr><th>Header</th><th>Meaning</th></tr>
+        <tr><td><code>X-Compiled-Class-Count</code></td><td>Number of classes compiled</td></tr>
+        <tr><td><code>X-Compiled-Classes</code></td><td>URL-encoded, comma-separated class names</td></tr>
+        <tr><td><code>X-Dex-File-Count</code></td><td>1, or more if multidex</td></tr>
+        <tr><td><code>X-MainDex-Matched</code> / <code>X-MainDex-Unmatched</code></td><td>Only present if <code>mainDexClasses</code> was sent</td></tr>
+      </table>
+      <p class="muted" style="margin-top:14px; font-size:13px;">Response (error, 400/500): JSON — <code>{ error, details, parsedErrors }</code>. <code>parsedErrors</code> is an array of <code>{ file, line, level, message }</code> when javac output could be parsed.</p>
+    </div>
+
+    <div class="endpoint card">
+      <div class="endpoint-head"><span class="method method-post">POST</span><span class="endpoint-path">/decompile</span></div>
+      <p class="muted" style="margin-bottom:14px;">Decompile .dex / .apk / .jar / .class / .aar back to Java source.</p>
+      <pre class="code-block">curl -X POST https://YOUR-APP.onrender.com/decompile \
+  -F "inputFiles=@classes.dex" \
+  -o decompiled-sources.zip</pre>
+      <table class="params">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>inputFiles</code></td><td>file(s)</td><td>Up to 5 files, 60MB each. .dex, .apk, .jar, .class, .aar, .zip.</td></tr>
+      </table>
+      <p class="muted" style="margin-top:14px; font-size:13px;">Response (success): <code>decompiled-sources.zip</code>, plus header <code>X-Java-File-Count</code>. Errors: same JSON shape as <code>/convert</code>.</p>
+    </div>
+
+    <div class="endpoint card">
+      <div class="endpoint-head"><span class="method method-get">GET</span><span class="endpoint-path">/health</span></div>
+      <p class="muted" style="margin-bottom:14px;">Liveness check — useful for uptime monitors or waking a sleeping free-tier instance.</p>
+      <pre class="code-block">curl https://YOUR-APP.onrender.com/health
+<span class="cm"># {"ok":true}</span></pre>
+    </div>
+
+    <div class="card" style="text-align:center; padding:32px 24px;">
+      <p class="muted" style="margin-bottom:16px;">Replace <code>YOUR-APP.onrender.com</code> with your actual Render URL. Everything above is exactly what the web UI itself calls — nothing hidden.</p>
+      <a href="/convert" class="btn btn-ghost">Try it in the UI →</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+</body>
+</html>

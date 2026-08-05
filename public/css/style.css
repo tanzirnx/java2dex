@@ -28,6 +28,24 @@
   --maxw: 1080px;
 }
 
+[data-theme="light"] {
+  --ink: #F7F5F1;
+  --ink-2: #EFEBE4;
+  --panel: #FFFFFF;
+  --panel-2: #F3EFE8;
+  --line: #E2DDD3;
+  --copper: #C9762A;
+  --copper-dim: #A85F1E;
+  --teal: #1E9E86;
+  --danger: #D6373D;
+  --text: #1B1A17;
+  --muted: #6B6459;
+  --muted-2: #948C7D;
+}
+
+[data-theme="light"] textarea { color: #1B1A17; }
+[data-theme="light"] .circuit-art svg text[fill="#EDEFF3"] { fill: #1B1A17; }
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -119,6 +137,25 @@ a { color: inherit; }
 }
 .gear-btn:hover, .gear-btn.active { color: var(--copper); border-color: var(--copper); }
 .gear-btn svg { width: 18px; height: 18px; }
+
+.theme-btn {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.theme-btn:hover { color: var(--copper); border-color: var(--copper); }
+.theme-btn svg { width: 18px; height: 18px; }
+.theme-btn .icon-sun { display: none; }
+[data-theme="light"] .theme-btn .icon-moon { display: none; }
+[data-theme="light"] .theme-btn .icon-sun { display: block; }
 
 .nav-links {
   display: flex;

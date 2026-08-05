@@ -21,6 +21,25 @@ const D8_PATH = process.env.D8_PATH || "d8";
 const ANDROID_JAR = process.env.ANDROID_JAR || ""; // optional, only needed if code uses android.* APIs
 const JADX_PATH = process.env.JADX_PATH || "jadx";
 
+// ---- AndroidX classpath (optional) ----
+// If /opt/androidx-libs (or ANDROIDX_LIBS_DIR) contains .jar files — extracted
+// from AndroidX/Material AARs at Docker build time — they're added to javac's
+// classpath automatically. Scanned at request time (not just boot) so it's
+// resilient to partial/failed downloads: whatever jars exist get used, missing
+// ones are simply skipped rather than breaking the whole classpath.
+const ANDROIDX_LIBS_DIR = process.env.ANDROIDX_LIBS_DIR || "/opt/androidx-libs";
+function getAndroidxClasspath() {
+  try {
+    if (!fs.existsSync(ANDROIDX_LIBS_DIR)) return [];
+    return fs
+      .readdirSync(ANDROIDX_LIBS_DIR)
+      .filter((f) => f.endsWith(".jar"))
+      .map((f) => path.join(ANDROIDX_LIBS_DIR, f));
+  } catch (e) {
+    return [];
+  }
+}
+
 const upload = multer({
   dest: path.join(os.tmpdir(), "java2dex-uploads"),
   limits: { fileSize: 20 * 1024 * 1024, files: 50 }, // 20MB/file, up to 50 files
@@ -77,6 +96,7 @@ app.get("/history", (req, res) => res.sendFile(path.join(__dirname, "public", "h
 app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help.html")));
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
+app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
 
 // Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
 app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
@@ -241,10 +261,13 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
       return res.status(400).json({ error: "No .java files found. Attach .java files directly, or a .zip containing them." });
     }
 
-    // 1. Compile with javac
+    // 1. Compile with javac (android.jar + any available AndroidX jars on classpath)
     const javacArgs = ["-d", classDir, "-encoding", "UTF-8"];
-    if (ANDROID_JAR) {
-      javacArgs.push("-classpath", ANDROID_JAR);
+    const classpathParts = [];
+    if (ANDROID_JAR) classpathParts.push(ANDROID_JAR);
+    classpathParts.push(...getAndroidxClasspath());
+    if (classpathParts.length) {
+      javacArgs.push("-classpath", classpathParts.join(path.delimiter));
     }
     javacArgs.push(...javaFilePaths);
 
@@ -269,8 +292,39 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
     }
     const classNames = classFiles.map((f) => path.relative(classDir, f).replace(/\.class$/, "").split(path.sep).join("."));
 
-    // 3. Convert to DEX with d8
-    const d8Args = ["--output", dexDir, ...classFiles];
+    // 3. Convert to DEX with d8 — optional manual multidex control
+    const d8Args = ["--output", dexDir];
+
+    const minApi = (req.body && req.body.minApi || "").trim();
+    if (minApi && /^\d+$/.test(minApi)) {
+      d8Args.push("--min-api", minApi);
+    }
+
+    const mainDexRaw = (req.body && req.body.mainDexClasses) || "";
+    const requestedMainDex = mainDexRaw
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    let mainDexListPath = null;
+    let mainDexMatched = [];
+    let mainDexUnmatched = [];
+    if (requestedMainDex.length) {
+      requestedMainDex.forEach((wanted) => {
+        // match either the full dotted name or just the simple (last-segment) class name
+        const hit = classNames.find((cn) => cn === wanted || cn.endsWith("." + wanted) || cn === wanted.replace(/\./g, "$"));
+        if (hit) mainDexMatched.push(hit);
+        else mainDexUnmatched.push(wanted);
+      });
+      if (mainDexMatched.length) {
+        mainDexListPath = path.join(workDir, "main-dex-list.txt");
+        const listContent = mainDexMatched.map((cn) => cn.split(".").join("/") + ".class").join("\n") + "\n";
+        await fsp.writeFile(mainDexListPath, listContent, "utf8");
+        d8Args.push("--main-dex-list", mainDexListPath);
+      }
+    }
+
+    d8Args.push(...classFiles);
     try {
       await run(D8_PATH, d8Args);
     } catch (dexErr) {
@@ -292,7 +346,16 @@ app.post("/convert", upload.array("javaFiles"), async (req, res) => {
     res.setHeader("X-Compiled-Class-Count", String(classNames.length));
     res.setHeader("X-Compiled-Classes", inspectorClasses);
     res.setHeader("X-Dex-File-Count", String(dexFiles.length));
-    res.setHeader("Access-Control-Expose-Headers", "X-Compiled-Class-Count, X-Compiled-Classes, X-Dex-File-Count, Content-Disposition");
+    if (mainDexListPath) {
+      res.setHeader("X-MainDex-Matched", String(mainDexMatched.length));
+      if (mainDexUnmatched.length) {
+        res.setHeader("X-MainDex-Unmatched", encodeURIComponent(mainDexUnmatched.join(",")));
+      }
+    }
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "X-Compiled-Class-Count, X-Compiled-Classes, X-Dex-File-Count, X-MainDex-Matched, X-MainDex-Unmatched, Content-Disposition"
+    );
 
     // 4. If only one classes.dex, send it directly. Otherwise zip (multidex case).
     if (dexFiles.length === 1) {

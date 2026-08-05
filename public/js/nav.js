@@ -15,7 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   initInstallPrompt();
+  initThemeToggle();
 });
+
+// ---- theme toggle (dark default, light optional) ----
+function initThemeToggle() {
+  const btn = document.getElementById('themeToggleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('java2dex_theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('java2dex_theme', 'light');
+    }
+  });
+}
 
 // ---- service worker registration (all pages) ----
 if ('serviceWorker' in navigator) {

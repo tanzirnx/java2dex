@@ -1,4 +1,4 @@
-const CACHE_NAME = "java2dex-shell-v3";
+const CACHE_NAME = "java2dex-shell-v4";
 const APP_SHELL = [
   "/",
   "/convert",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "/help",
   "/settings",
   "/about",
+  "/api-docs",
   "/css/style.css",
   "/js/nav.js",
   "/js/history.js",

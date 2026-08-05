@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Convert — java2dex</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
@@ -30,6 +31,10 @@
         <a href="/help">Help</a>
       </div>
       <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <button class="theme-btn" id="themeToggleBtn" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
       <a href="/settings" class="gear-btn" aria-label="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
@@ -73,18 +78,54 @@
         </div>
 
         <div class="panel" id="panel-paste">
-          <label class="field-label">Filename (auto-detected from your public class)</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+            <label class="field-label" style="margin:0;">Filename (auto-detected from your public class)</label>
+            <select id="templatePicker" style="background:var(--ink-2); color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12.5px; font-family:var(--font-mono);">
+              <option value="">+ Insert template…</option>
+              <option value="activity">Android Activity</option>
+              <option value="dialog">Custom Dialog</option>
+              <option value="fragment">Fragment</option>
+              <option value="pojo">Plain class (POJO)</option>
+              <option value="adapter">RecyclerView Adapter</option>
+            </select>
+          </div>
           <input type="text" id="pasteFilename" placeholder="MyClass.java" />
           <textarea id="pasteCode" placeholder="Paste your Java code here, any length..." spellcheck="false"></textarea>
           <div class="paste-actions">
             <span class="charcount" id="charcount">0 characters</span>
+            <span id="syntaxStatus" style="font-size:11.5px; font-family:var(--font-mono);"></span>
             <button class="btn btn-ghost btn-sm" id="addPasteBtn">+ Add to queue</button>
           </div>
         </div>
 
+        <div style="display:flex; align-items:center; gap:10px; margin-top:16px; padding:10px 12px; background:var(--ink-2); border:1px solid var(--line); border-radius:9px;">
+          <span style="font-size:12.5px; color:var(--muted); font-family:var(--font-mono);">Compile mode:</span>
+          <label style="display:flex; align-items:center; gap:5px; font-size:12.5px; cursor:pointer;">
+            <input type="radio" name="compileMode" value="together" id="modeTogether" checked /> Together
+          </label>
+          <label style="display:flex; align-items:center; gap:5px; font-size:12.5px; cursor:pointer;">
+            <input type="radio" name="compileMode" value="separate" id="modeSeparate" /> Separately
+          </label>
+        </div>
+
+        <details style="margin-top:12px;">
+          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted); font-family:var(--font-mono);">⚙ Advanced (multidex)</summary>
+          <div style="margin-top:10px; display:grid; gap:10px;">
+            <div>
+              <label class="field-label">Force these classes into the primary dex (comma or newline separated)</label>
+              <input type="text" id="mainDexClassesInput" placeholder="e.g. MainActivity, MyApplication" />
+            </div>
+            <div>
+              <label class="field-label">Min API level (optional, enables legacy multidex splitting)</label>
+              <input type="text" id="minApiInput" placeholder="e.g. 19" style="max-width:140px;" />
+            </div>
+          </div>
+        </details>
+
         <div class="filelist" id="filelistWrap" style="display:none;">
-          <h3>Queue</h3>
+          <h3>Queue <span style="font-weight:400; color:var(--muted-2); font-size:11px;">(drag to reorder)</span></h3>
           <div id="fileList"></div>
+        </div>
         </div>
 
         <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX <span style="opacity:0.7; font-weight:400; font-size:12px;">(Ctrl+Enter)</span></button>
@@ -170,16 +211,38 @@
     selectedFiles.forEach((entry, i) => {
       const div = document.createElement('div');
       div.className = 'fileitem';
+      div.draggable = true;
+      div.dataset.index = i;
       const sizeKb = (entry.source.size / 1024).toFixed(1);
       const badgeMap = { pasted: 'badge-pasted', zip: 'badge-progress', file: 'badge-file' };
       const badgeClass = badgeMap[entry.type] || 'badge-file';
       const badgeLabel = entry.type === 'pasted' ? 'pasted' : entry.type === 'zip' ? 'zip' : 'file';
-      div.innerHTML = `<span class="badge ${badgeClass}">${badgeLabel}</span><span class="name">${entry.name}</span><span class="size">${sizeKb} KB</span>`;
+      div.innerHTML = `<span style="cursor:grab; color:var(--muted-2); font-family:var(--font-mono); font-size:13px;" title="Drag to reorder">⠿</span><span class="badge ${badgeClass}">${badgeLabel}</span><span class="name">${entry.name}</span><span class="size">${sizeKb} KB</span>`;
       const btn = document.createElement('button');
       btn.className = 'remove';
       btn.textContent = 'remove';
       btn.onclick = () => { selectedFiles.splice(i, 1); renderFileList(); };
       div.appendChild(btn);
+
+      div.addEventListener('dragstart', (e) => {
+        div.style.opacity = '0.4';
+        e.dataTransfer.setData('text/plain', String(i));
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      div.addEventListener('dragend', () => { div.style.opacity = '1'; });
+      div.addEventListener('dragover', (e) => { e.preventDefault(); div.style.borderColor = 'var(--copper)'; });
+      div.addEventListener('dragleave', () => { div.style.borderColor = 'var(--line)'; });
+      div.addEventListener('drop', (e) => {
+        e.preventDefault();
+        div.style.borderColor = 'var(--line)';
+        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        const toIndex = parseInt(div.dataset.index, 10);
+        if (fromIndex === toIndex || isNaN(fromIndex)) return;
+        const [moved] = selectedFiles.splice(fromIndex, 1);
+        selectedFiles.splice(toIndex, 0, moved);
+        renderFileList();
+      });
+
       fileListEl.appendChild(div);
     });
     convertBtn.disabled = selectedFiles.length === 0;
@@ -215,6 +278,7 @@
   const pasteFilename = document.getElementById('pasteFilename');
   const charcount = document.getElementById('charcount');
   const addPasteBtn = document.getElementById('addPasteBtn');
+  const syntaxStatus = document.getElementById('syntaxStatus');
 
   pasteCode.addEventListener('input', () => {
     charcount.textContent = pasteCode.value.length.toLocaleString() + ' characters';
@@ -222,8 +286,64 @@
       const name = detectClassName(pasteCode.value);
       pasteFilename.value = name ? name + '.java' : '';
     }
+    updateSyntaxStatus();
   });
   pasteFilename.addEventListener('input', () => { pasteFilename.dataset.userEdited = '1'; });
+
+  // Lightweight client-side check: brace/paren/bracket balance + unterminated
+  // string/char literals, skipping comments and literal contents. This is not
+  // a real parser — it just catches the most common typo-level mistakes
+  // before a round-trip to the server.
+  function validateJavaSyntaxBasic(code) {
+    const stack = [];
+    const pairs = { '{': '}', '(': ')', '[': ']' };
+    const closers = { '}': '{', ')': '(', ']': '[' };
+    let inLineComment = false, inBlockComment = false, inString = false, inChar = false;
+    let issues = [];
+
+    for (let i = 0; i < code.length; i++) {
+      const c = code[i];
+      const next = code[i + 1];
+
+      if (inLineComment) { if (c === '\n') inLineComment = false; continue; }
+      if (inBlockComment) { if (c === '*' && next === '/') { inBlockComment = false; i++; } continue; }
+      if (inString) { if (c === '\\') { i++; continue; } if (c === '"') inString = false; continue; }
+      if (inChar) { if (c === '\\') { i++; continue; } if (c === "'") inChar = false; continue; }
+
+      if (c === '/' && next === '/') { inLineComment = true; i++; continue; }
+      if (c === '/' && next === '*') { inBlockComment = true; i++; continue; }
+      if (c === '"') { inString = true; continue; }
+      if (c === "'") { inChar = true; continue; }
+
+      if (pairs[c]) stack.push(c);
+      else if (closers[c]) {
+        if (stack.length === 0 || stack[stack.length - 1] !== closers[c]) {
+          issues.push(`Unexpected '${c}'`);
+        } else {
+          stack.pop();
+        }
+      }
+    }
+
+    if (inString) issues.push('Unterminated string literal');
+    if (inBlockComment) issues.push('Unterminated /* comment');
+    if (stack.length) issues.push(stack.length + ' unclosed ' + stack.map(c => `'${c}'`).join(', '));
+
+    return { balanced: issues.length === 0, issues };
+  }
+
+  function updateSyntaxStatus() {
+    const code = pasteCode.value;
+    if (!code.trim()) { syntaxStatus.textContent = ''; return; }
+    const result = validateJavaSyntaxBasic(code);
+    if (result.balanced) {
+      syntaxStatus.textContent = '✓ balanced';
+      syntaxStatus.style.color = 'var(--teal)';
+    } else {
+      syntaxStatus.textContent = '⚠ ' + result.issues[0];
+      syntaxStatus.style.color = 'var(--danger)';
+    }
+  }
 
   function detectClassName(code) {
     let m = code.match(/\bpublic\s+(?:final\s+|abstract\s+|strictfp\s+|sealed\s+|non-sealed\s+)*(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
@@ -232,6 +352,26 @@
     if (m) return m[1];
     return null;
   }
+
+  // ---- code templates ----
+  const CODE_TEMPLATES = {
+    activity: `import android.app.Activity;\nimport android.os.Bundle;\nimport android.widget.TextView;\n\npublic class MyActivity extends Activity {\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        TextView tv = new TextView(this);\n        tv.setText("Hello from MyActivity");\n        setContentView(tv);\n    }\n}\n`,
+    dialog: `import android.app.Activity;\nimport android.app.AlertDialog;\nimport android.widget.TextView;\n\npublic class MyDialog {\n    public static void show(Activity activity, String title, String message) {\n        TextView view = new TextView(activity);\n        view.setPadding(40, 30, 40, 30);\n        view.setText(message);\n        new AlertDialog.Builder(activity)\n                .setTitle(title)\n                .setView(view)\n                .setPositiveButton("OK", null)\n                .show();\n    }\n}\n`,
+    fragment: `import android.app.Fragment;\nimport android.os.Bundle;\nimport android.view.LayoutInflater;\nimport android.view.View;\nimport android.view.ViewGroup;\nimport android.widget.TextView;\n\npublic class MyFragment extends Fragment {\n    @Override\n    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {\n        TextView tv = new TextView(getActivity());\n        tv.setText("Hello from MyFragment");\n        return tv;\n    }\n}\n`,
+    pojo: `public class Person {\n    private String name;\n    private int age;\n\n    public Person(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n\n    public String getName() { return name; }\n    public int getAge() { return age; }\n\n    @Override\n    public String toString() {\n        return name + " (" + age + ")";\n    }\n}\n`,
+    adapter: `import android.view.LayoutInflater;\nimport android.view.View;\nimport android.view.ViewGroup;\nimport android.widget.TextView;\nimport android.widget.BaseAdapter;\nimport java.util.List;\n\npublic class MyAdapter extends BaseAdapter {\n    private final List<String> items;\n\n    public MyAdapter(List<String> items) { this.items = items; }\n\n    @Override public int getCount() { return items.size(); }\n    @Override public Object getItem(int position) { return items.get(position); }\n    @Override public long getItemId(int position) { return position; }\n\n    @Override\n    public View getView(int position, View convertView, ViewGroup parent) {\n        TextView tv = convertView != null ? (TextView) convertView : new TextView(parent.getContext());\n        tv.setText(items.get(position));\n        tv.setPadding(24, 24, 24, 24);\n        return tv;\n    }\n}\n`,
+  };
+
+  const templatePicker = document.getElementById('templatePicker');
+  templatePicker.addEventListener('change', () => {
+    const key = templatePicker.value;
+    templatePicker.value = '';
+    if (!key || !CODE_TEMPLATES[key]) return;
+    if (pasteCode.value.trim() && !confirm('This will replace the current paste editor content. Continue?')) return;
+    pasteCode.value = CODE_TEMPLATES[key];
+    pasteCode.dispatchEvent(new Event('input'));
+    pasteCode.focus();
+  });
 
   addPasteBtn.addEventListener('click', () => {
     const code = pasteCode.value;
@@ -334,6 +474,14 @@
     if (classNames.length) {
       html += `<div style="margin-top:8px; color:var(--muted-2);">${classNames.slice(0, 15).map(escapeHtmlLocal).join(', ')}${classNames.length > 15 ? ', …' : ''}</div>`;
     }
+    const mdMatched = headers.get('X-MainDex-Matched');
+    const mdUnmatched = headers.get('X-MainDex-Unmatched');
+    if (mdMatched) {
+      html += `<div style="margin-top:6px;">Main-dex classes matched: <strong style="color:var(--text);">${mdMatched}</strong></div>`;
+    }
+    if (mdUnmatched) {
+      html += `<div style="color:var(--danger);">Not found: ${escapeHtmlLocal(decodeURIComponent(mdUnmatched))}</div>`;
+    }
     inspectorBody.innerHTML = html;
     inspectorCard.style.display = 'block';
   }
@@ -352,7 +500,7 @@
     });
   }
 
-  async function runConvert() {
+  async function convertTogether() {
     if (selectedFiles.length === 0) return;
     convertBtn.disabled = true;
     resetStages();
@@ -370,6 +518,10 @@
 
     const formData = new FormData();
     selectedFiles.forEach(entry => formData.append('javaFiles', entry.source, entry.name));
+    const mainDexClasses = document.getElementById('mainDexClassesInput').value.trim();
+    const minApi = document.getElementById('minApiInput').value.trim();
+    if (mainDexClasses) formData.append('mainDexClasses', mainDexClasses);
+    if (minApi) formData.append('minApi', minApi);
     const inputFilesMeta = selectedFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
 
     try {
@@ -445,6 +597,109 @@
       J2DHistory.add({ inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
     } finally {
       convertBtn.disabled = false;
+    }
+  }
+
+  // ---- batch mode: each queue entry compiled independently ----
+  async function convertSeparate() {
+    if (selectedFiles.length === 0) return;
+    convertBtn.disabled = true;
+    resetStages();
+    inspectorCard.style.display = 'none';
+    errorActions.style.display = 'none';
+    setStage('stage-source', 'done');
+    setStage('stage-compile', 'active');
+    progressWrap.style.display = 'block';
+
+    j2dEnsureNotifyPermission();
+    j2dNotify('java2dex', `Converting ${selectedFiles.length} files separately…`, null);
+
+    const results = [];
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const entry = selectedFiles[i];
+      const pct = Math.round((i / selectedFiles.length) * 100);
+      progressBar.style.width = pct + '%';
+      progressLabel.textContent = `Compiling ${i + 1} of ${selectedFiles.length}: ${entry.name}`;
+      showStatus(`Compiling ${i + 1} of ${selectedFiles.length}: ${entry.name}`, 'info');
+
+      const formData = new FormData();
+      formData.append('javaFiles', entry.source, entry.name);
+
+      try {
+        const xhr = await xhrUpload('/convert', formData, () => {});
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const blob = xhr.response;
+          const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+          const match = disposition.match(/filename="(.+)"/);
+          const outName = (match ? match[1] : 'classes.dex').replace('classes', entry.name.replace(/\.(java|zip)$/i, '') + '-classes');
+          results.push({ name: entry.name, status: 'success', outName, blob });
+          J2DHistory.add({
+            inputFiles: [{ name: entry.name, size: entry.source.size, kind: entry.type }],
+            status: 'success', outputName: outName, outputSizeBytes: blob.size,
+          });
+        } else {
+          const text = await xhr.response.text();
+          let errJson = {};
+          try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Conversion failed' }; }
+          results.push({ name: entry.name, status: 'error', error: errJson.error || 'Conversion failed', details: errJson.details });
+          J2DHistory.add({
+            inputFiles: [{ name: entry.name, size: entry.source.size, kind: entry.type }],
+            status: 'error', errorMessage: (errJson.error || 'Conversion failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 300) : ''),
+          });
+        }
+      } catch (err) {
+        results.push({ name: entry.name, status: 'error', error: 'Network error: ' + err.message });
+      }
+    }
+
+    progressWrap.style.display = 'none';
+    setStage('stage-compile', 'done');
+    setStage('stage-dex', 'done');
+
+    const successCount = results.filter(r => r.status === 'success').length;
+    j2dNotify('java2dex — batch done', `${successCount}/${results.length} succeeded`, null);
+    renderBatchResults(results);
+    convertBtn.disabled = false;
+  }
+
+  function renderBatchResults(results) {
+    let html = `<strong style="color:var(--text);">Batch results — ${results.filter(r => r.status === 'success').length}/${results.length} succeeded</strong>`;
+    html += '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">';
+    results.forEach((r, idx) => {
+      if (r.status === 'success') {
+        html += `<div class="fileitem" style="margin:0;"><span class="badge badge-success">done</span><span class="name">${escapeHtmlLocal(r.name)}</span><button class="btn btn-ghost btn-sm" data-download-idx="${idx}">Download</button></div>`;
+      } else {
+        html += `<div class="fileitem" style="margin:0; border-color:rgba(242,85,90,0.3);"><span class="badge badge-error">failed</span><span class="name">${escapeHtmlLocal(r.name)}</span><span style="font-size:11.5px; color:var(--danger);">${escapeHtmlLocal(r.error || '')}</span></div>`;
+      }
+    });
+    html += '</div>';
+    statusEl.innerHTML = html;
+    statusEl.className = 'status show info';
+
+    statusEl.querySelectorAll('[data-download-idx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = results[parseInt(btn.dataset.downloadIdx, 10)];
+        const url = URL.createObjectURL(r.blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = r.outName;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      });
+    });
+
+    const failedWithDetails = results.filter(r => r.status === 'error' && r.details);
+    if (failedWithDetails.length) {
+      lastErrorText = failedWithDetails.map(r => `--- ${r.name} ---\n${r.error}\n${r.details}`).join('\n\n');
+      errorActions.style.display = 'block';
+    }
+  }
+
+  function runConvert() {
+    const mode = document.querySelector('input[name="compileMode"]:checked').value;
+    if (mode === 'separate' && selectedFiles.length > 1) {
+      convertSeparate();
+    } else {
+      convertTogether();
     }
   }
 
