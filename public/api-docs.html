@@ -74,23 +74,23 @@
       <div class="endpoint-head"><span class="method method-post">POST</span><span class="endpoint-path">/convert</span></div>
       <p class="muted" style="margin-bottom:14px;">Compile .java source (or a .zip of one) to DEX bytecode.</p>
       <pre class="code-block"><span class="cm"># basic — one file</span>
-curl -X POST https://YOUR-APP.onrender.com/convert \
+curl -X POST https://java2dex.onrender.com/convert \
   -F "javaFiles=@MyClass.java" \
   -o classes.dex
 
 <span class="cm"># multiple files, compiled together</span>
-curl -X POST https://YOUR-APP.onrender.com/convert \
+curl -X POST https://java2dex.onrender.com/convert \
   -F "javaFiles=@A.java" \
   -F "javaFiles=@B.java" \
   -o dex-output.zip   <span class="cm"># .zip only if multidex output</span>
 
 <span class="cm"># a .zip project (auto-extracted server-side)</span>
-curl -X POST https://YOUR-APP.onrender.com/convert \
+curl -X POST https://java2dex.onrender.com/convert \
   -F "javaFiles=@project.zip" \
   -o classes.dex
 
 <span class="cm"># with manual multidex control</span>
-curl -X POST https://YOUR-APP.onrender.com/convert \
+curl -X POST https://java2dex.onrender.com/convert \
   -F "javaFiles=@MainActivity.java" \
   -F "mainDexClasses=MainActivity,MyApplication" \
   -F "minApi=19" \
@@ -117,7 +117,7 @@ curl -X POST https://YOUR-APP.onrender.com/convert \
     <div class="endpoint card">
       <div class="endpoint-head"><span class="method method-post">POST</span><span class="endpoint-path">/decompile</span></div>
       <p class="muted" style="margin-bottom:14px;">Decompile .dex / .apk / .jar / .class / .aar back to Java source.</p>
-      <pre class="code-block">curl -X POST https://YOUR-APP.onrender.com/decompile \
+      <pre class="code-block">curl -X POST https://java2dex.onrender.com/decompile \
   -F "inputFiles=@classes.dex" \
   -o decompiled-sources.zip</pre>
       <table class="params">
@@ -130,12 +130,12 @@ curl -X POST https://YOUR-APP.onrender.com/convert \
     <div class="endpoint card">
       <div class="endpoint-head"><span class="method method-get">GET</span><span class="endpoint-path">/health</span></div>
       <p class="muted" style="margin-bottom:14px;">Liveness check — useful for uptime monitors or waking a sleeping free-tier instance.</p>
-      <pre class="code-block">curl https://YOUR-APP.onrender.com/health
+      <pre class="code-block">curl https://java2dex.onrender.com/health
 <span class="cm"># {"ok":true}</span></pre>
     </div>
 
     <div class="card" style="text-align:center; padding:32px 24px;">
-      <p class="muted" style="margin-bottom:16px;">Replace <code>YOUR-APP.onrender.com</code> with your actual Render URL. Everything above is exactly what the web UI itself calls — nothing hidden.</p>
+      <p class="muted" style="margin-bottom:16px;">Replace <code>java2dex.onrender.com</code> with your actual Render URL. Everything above is exactly what the web UI itself calls — nothing hidden.</p>
       <a href="/convert" class="btn btn-ghost">Try it in the UI →</a>
     </div>
   </section>
