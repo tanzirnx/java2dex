@@ -43,6 +43,15 @@ RUN mkdir -p /opt/jadx && \
 ENV PATH="/opt/jadx/bin:${PATH}"
 ENV JADX_PATH="/opt/jadx/bin/jadx"
 
+# ---- smali / baksmali (Java <-> Smali assembler/disassembler) ----
+ENV SMALI_VERSION=3.0.9
+RUN mkdir -p /opt/smali && \
+    wget -q "https://github.com/baksmali/smali/releases/download/${SMALI_VERSION}/baksmali-${SMALI_VERSION}-fat-release.jar" -O /opt/smali/baksmali.jar && \
+    wget -q "https://github.com/baksmali/smali/releases/download/${SMALI_VERSION}/smali-${SMALI_VERSION}-fat-release.jar" -O /opt/smali/smali.jar
+
+ENV BAKSMALI_JAR="/opt/smali/baksmali.jar"
+ENV SMALI_JAR="/opt/smali/smali.jar"
+
 # ---- AndroidX / Material classes (optional, best-effort) ----
 # Extracts classes.jar out of a few common AAR artifacts so code referencing
 # androidx.* / com.google.android.material.* can compile too. Each download

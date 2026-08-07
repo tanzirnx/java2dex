@@ -51,6 +51,15 @@ Powered by [jadx](https://github.com/skylot/jadx), pinned to a specific version 
 
 Decompiled output is best-effort: variable/method names are regenerated, and heavily obfuscated or R8-minified code may come back partial. Only decompile code you have the right to inspect.
 
+## Smali (v3)
+
+New page: **`/smali`**, with a glassmorphism ("glass UI") look — frosted panels, blurred color blobs, distinct from the rest of the site.
+
+- **Java → Smali** (`POST /java-to-smali`) — same input options as Convert (upload .java files, a .zip project, or paste code), but runs one step further: javac → d8 → **baksmali**, returning a `.zip` of readable `.smali` source. Response headers include method/field counts (`X-Method-Count`, `X-Field-Count`) checked against the 65,536-per-dex limit, plus a preview of the first file (`X-Smali-Preview`) shown inline on the page.
+- **Smali → DEX** (`POST /smali-to-dex`) — upload `.smali` files (or a `.zip` of them) and get back an assembled `classes.dex`, via the **smali** assembler. Useful for editing disassembled output and rebuilding it.
+- Both directions were tested end-to-end in development with real `smali`/`baksmali` jars (a hand-written test `.smali` file → assembled to a real `Dalvik dex file version 035` → disassembled back to matching `.smali`).
+- Powered by [smali/baksmali](https://github.com/baksmali/smali) (`SMALI_VERSION` in the `Dockerfile`), downloaded as prebuilt fat jars — no build step needed, just `java -jar`.
+
 ## Advanced features (v2)
 
 - **Manual multidex control** — Convert page → "Advanced (multidex)": specify which classes must land in the primary dex (`--main-dex-list`) and a `--min-api` value, passed straight to d8.

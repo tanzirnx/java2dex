@@ -26,6 +26,7 @@
         <a href="/">Home</a>
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
+        <a href="/smali">Smali</a>
         <a href="/history">History</a>
         <a href="/about">About</a>
         <a href="/help">Help</a>
@@ -120,9 +121,14 @@
       const badge = isSuccess
         ? `<span class="badge badge-success">done</span>`
         : `<span class="badge badge-error">failed</span>`;
-      const kindBadge = entry.kind === 'decompile'
-        ? `<span class="badge badge-pasted" style="margin-top:6px;">decompile</span>`
-        : `<span class="badge badge-file" style="margin-top:6px;">convert</span>`;
+      const kindLabels = {
+        decompile: 'decompile',
+        'java-to-smali': 'java→smali',
+        'smali-to-dex': 'smali→dex',
+        convert: 'convert',
+      };
+      const kindBadgeClass = { decompile: 'badge-pasted', 'java-to-smali': 'badge-progress', 'smali-to-dex': 'badge-progress' }[entry.kind] || 'badge-file';
+      const kindBadge = `<span class="badge ${kindBadgeClass}" style="margin-top:6px;">${kindLabels[entry.kind] || 'convert'}</span>`;
 
       const titleText = isSuccess ? (entry.outputName || 'classes.dex') : 'Conversion failed';
       const metaLine = isSuccess

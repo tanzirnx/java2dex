@@ -30,6 +30,13 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
+      "name": "Smali",
+      "short_name": "Smali",
+      "description": "Java to Smali and Smali to DEX",
+      "url": "/smali",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "History",
       "short_name": "History",
       "description": "View past conversions and decompiles",

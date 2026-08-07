@@ -26,6 +26,7 @@
         <a href="/">Home</a>
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
+        <a href="/smali">Smali</a>
         <a href="/history">History</a>
         <a href="/about">About</a>
         <a href="/help">Help</a>
@@ -64,6 +65,7 @@
       <div class="loglist">
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Convert</strong><span>.java source → compiled .dex bytecode, via javac then d8. Upload files, a .zip project, or paste code directly.</span></div></div>
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Decompile</strong><span>.dex / .apk / .jar / .class → readable .java source, via jadx.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Smali</strong><span>.java → disassembled Smali (baksmali), and Smali → .dex (smali assembler) — a round trip for editing raw bytecode.</span></div></div>
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>History</strong><span>Every run is logged locally in your browser — never on a server database.</span></div></div>
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Installable</strong><span>Works as a PWA — installable on desktop and Android, with offline shell caching and Android share-target support.</span></div></div>
       </div>
@@ -75,6 +77,7 @@
       <div class="info-row"><span class="label">Compiler</span><span class="value">javac (OpenJDK)</span></div>
       <div class="info-row"><span class="label">Dexer</span><span class="value">d8 (Android build-tools)</span></div>
       <div class="info-row"><span class="label">Decompiler</span><span class="value">jadx</span></div>
+      <div class="info-row"><span class="label">Smali</span><span class="value">baksmali / smali</span></div>
       <div class="info-row"><span class="label">Notifications</span><span class="value">Web Push (web-push)</span></div>
       <div class="info-row"><span class="label">Hosting</span><span class="value">Render (Docker, free tier)</span></div>
       <div class="info-row"><span class="label">Cost</span><span class="value">Free — no account, no paid dependencies</span></div>
@@ -95,7 +98,9 @@
 
 - /decompile — Upload a .dex, .apk, .jar, .class, .aar, or .zip file. Sent to POST /decompile (field name "inputFiles"), the server runs jadx and returns a .zip of decompiled .java source files.
 
-- /history — Shows every past convert/decompile run, stored only in the browser's localStorage (metadata always, plus the output file itself if under ~350KB for re-download). Supports export/import as JSON, delete individual entries, and clear all.
+- /smali — Two modes. "Java → Smali": upload/paste .java (or a .zip) like /convert, but the server also runs baksmali on the resulting dex to produce readable Smali source (POST /java-to-smali, field "javaFiles", returns a .zip of .smali files, with method/field counts in response headers). "Smali → DEX": upload .smali files (or a .zip of them) and the server reassembles them into a classes.dex (POST /smali-to-dex, field "smaliFiles").
+
+- /history — Shows every past convert/decompile/smali run, stored only in the browser's localStorage (metadata always, plus the output file itself if under ~350KB for re-download). Supports export/import as JSON, delete individual entries, and clear all.
 
 - /settings — Toggle push notifications (Web Push API) and local per-action alerts, view app/install info, clear local history or offline cache.
 

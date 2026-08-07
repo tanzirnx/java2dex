@@ -20,6 +20,8 @@ const PORT = process.env.PORT || 3000;
 const D8_PATH = process.env.D8_PATH || "d8";
 const ANDROID_JAR = process.env.ANDROID_JAR || ""; // optional, only needed if code uses android.* APIs
 const JADX_PATH = process.env.JADX_PATH || "jadx";
+const BAKSMALI_JAR = process.env.BAKSMALI_JAR || "/opt/smali/baksmali.jar";
+const SMALI_JAR = process.env.SMALI_JAR || "/opt/smali/smali.jar";
 
 // ---- AndroidX classpath (optional) ----
 // If /opt/androidx-libs (or ANDROIDX_LIBS_DIR) contains .jar files — extracted
@@ -97,6 +99,7 @@ app.get("/help", (req, res) => res.sendFile(path.join(__dirname, "public", "help
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
+app.get("/smali", (req, res) => res.sendFile(path.join(__dirname, "public", "smali.html")));
 
 // Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
 app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
@@ -467,7 +470,221 @@ app.post("/decompile", uploadDecompile.array("inputFiles"), async (req, res) => 
   }
 });
 
-// ---- Push notifications API ----
+// ---- Java -> Smali: javac -> d8 -> baksmali disassemble ----
+app.post("/java-to-smali", upload.array("javaFiles"), async (req, res) => {
+  const jobId = uuidv4();
+  const workDir = path.join(os.tmpdir(), "java2dex-smali-jobs", jobId);
+  const srcDir = path.join(workDir, "src");
+  const classDir = path.join(workDir, "classes");
+  const dexDir = path.join(workDir, "dex");
+  const smaliDir = path.join(workDir, "smali");
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded. Attach one or more .java files, or a .zip project." });
+    }
+
+    await fsp.mkdir(srcDir, { recursive: true });
+    await fsp.mkdir(classDir, { recursive: true });
+    await fsp.mkdir(dexDir, { recursive: true });
+    await fsp.mkdir(smaliDir, { recursive: true });
+
+    const javaFilePaths = [];
+    for (const file of req.files) {
+      const lowerName = file.originalname.toLowerCase();
+      if (lowerName.endsWith(".zip")) {
+        try {
+          javaFilePaths.push(...extractJavaFromZip(file.path, srcDir));
+        } catch (zipErr) {
+          console.warn("Zip extraction failed for", file.originalname, zipErr.message);
+        }
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      if (!lowerName.endsWith(".java")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const dest = path.join(srcDir, path.basename(file.originalname));
+      await fsp.rename(file.path, dest);
+      javaFilePaths.push(dest);
+    }
+
+    if (javaFilePaths.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "No .java files found. Attach .java files directly, or a .zip containing them." });
+    }
+
+    // 1. javac
+    const javacArgs = ["-d", classDir, "-encoding", "UTF-8"];
+    const classpathParts = [];
+    if (ANDROID_JAR) classpathParts.push(ANDROID_JAR);
+    classpathParts.push(...getAndroidxClasspath());
+    if (classpathParts.length) javacArgs.push("-classpath", classpathParts.join(path.delimiter));
+    javacArgs.push(...javaFilePaths);
+
+    try {
+      await run("javac", javacArgs);
+    } catch (compileErr) {
+      cleanup(workDir);
+      const rawDetails = compileErr.stderr || compileErr.message || "";
+      return res.status(400).json({
+        error: "Java compilation failed",
+        details: rawDetails,
+        parsedErrors: parseJavacErrors(rawDetails),
+      });
+    }
+
+    const classFiles = await walkFiles(classDir, [".class"]);
+    if (classFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "Compilation produced no .class files." });
+    }
+
+    // 2. d8 -> dex
+    try {
+      await run(D8_PATH, ["--output", dexDir, ...classFiles]);
+    } catch (dexErr) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "DEX conversion failed", details: dexErr.stderr || dexErr.message });
+    }
+
+    const dexFiles = await walkFiles(dexDir, [".dex"]);
+    if (dexFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "d8 ran but produced no .dex output." });
+    }
+
+    // 3. baksmali -> smali source
+    try {
+      await run("java", ["-jar", BAKSMALI_JAR, "disassemble", "-o", smaliDir, ...dexFiles]);
+    } catch (baksmaliErr) {
+      cleanup(workDir);
+      return res.status(500).json({
+        error: "Smali disassembly failed",
+        details: baksmaliErr.stderr || baksmaliErr.stdout || baksmaliErr.message,
+      });
+    }
+
+    const smaliFiles = await walkFiles(smaliDir, [".smali"]);
+    if (smaliFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "baksmali ran but produced no .smali output." });
+    }
+
+    // method/field counts across all produced smali files (useful vs the 64K dex limit)
+    let methodCount = 0, fieldCount = 0;
+    let firstSmaliPreview = "";
+    for (let i = 0; i < smaliFiles.length; i++) {
+      const content = await fsp.readFile(smaliFiles[i], "utf8");
+      methodCount += (content.match(/^\s*\.method\s/gm) || []).length;
+      fieldCount += (content.match(/^\s*\.field\s/gm) || []).length;
+      if (i === 0) firstSmaliPreview = content.slice(0, 8000);
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", 'attachment; filename="smali-output.zip"');
+    res.setHeader("X-Smali-File-Count", String(smaliFiles.length));
+    res.setHeader("X-Method-Count", String(methodCount));
+    res.setHeader("X-Field-Count", String(fieldCount));
+    res.setHeader("X-Smali-Preview", encodeURIComponent(firstSmaliPreview));
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "X-Smali-File-Count, X-Method-Count, X-Field-Count, X-Smali-Preview, Content-Disposition"
+    );
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+    for (const f of smaliFiles) {
+      const relative = path.relative(smaliDir, f).split(path.sep).join("/");
+      archive.file(f, { name: relative });
+    }
+    await archive.finalize();
+    archive.on("end", () => cleanup(workDir));
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Unexpected server error", details: err.message });
+    }
+    cleanup(workDir);
+  }
+});
+
+// ---- Smali -> DEX: smali assemble (reassembles edited/disassembled smali) ----
+app.post("/smali-to-dex", upload.array("smaliFiles"), async (req, res) => {
+  const jobId = uuidv4();
+  const workDir = path.join(os.tmpdir(), "java2dex-smali-asm-jobs", jobId);
+  const srcDir = path.join(workDir, "src");
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded. Attach .smali files, or a .zip containing them." });
+    }
+    await fsp.mkdir(srcDir, { recursive: true });
+
+    const smaliPaths = [];
+    for (const file of req.files) {
+      const lowerName = file.originalname.toLowerCase();
+      if (lowerName.endsWith(".zip")) {
+        try {
+          const zip = new AdmZip(file.path);
+          zip.getEntries().forEach((entry) => {
+            if (entry.isDirectory || !entry.entryName.toLowerCase().endsWith(".smali")) return;
+            const outPath = path.join(srcDir, path.basename(entry.entryName));
+            fs.writeFileSync(outPath, entry.getData());
+            smaliPaths.push(outPath);
+          });
+        } catch (zipErr) {
+          console.warn("Zip extraction failed for", file.originalname, zipErr.message);
+        }
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      if (!lowerName.endsWith(".smali")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const dest = path.join(srcDir, path.basename(file.originalname));
+      await fsp.rename(file.path, dest);
+      smaliPaths.push(dest);
+    }
+
+    if (smaliPaths.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "No .smali files found. Attach .smali files directly, or a .zip containing them." });
+    }
+
+    const outDex = path.join(workDir, "classes.dex");
+    try {
+      await run("java", ["-jar", SMALI_JAR, "assemble", "-o", outDex, ...smaliPaths]);
+    } catch (asmErr) {
+      cleanup(workDir);
+      return res.status(400).json({
+        error: "Smali assembly failed",
+        details: asmErr.stderr || asmErr.stdout || asmErr.message,
+      });
+    }
+
+    if (!fs.existsSync(outDex)) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "smali ran but produced no classes.dex." });
+    }
+
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Disposition", 'attachment; filename="classes.dex"');
+    res.setHeader("X-Smali-Input-Count", String(smaliPaths.length));
+    res.setHeader("Access-Control-Expose-Headers", "X-Smali-Input-Count, Content-Disposition");
+    const stream = fs.createReadStream(outDex);
+    stream.pipe(res);
+    stream.on("close", () => cleanup(workDir));
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Unexpected server error", details: err.message });
+    }
+    cleanup(workDir);
+  }
+});
 app.get("/api/push/vapid-public-key", (req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smali — java2dex</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="glass-bg" aria-hidden="true">
+  <div class="glass-blob copper"></div>
+  <div class="glass-blob teal"></div>
+  <div class="glass-blob violet"></div>
+</div>
+
+<nav class="site-nav" style="background: rgba(11,18,32,0.55); backdrop-filter: blur(14px);">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/decompile">Decompile</a>
+        <a href="/smali" class="active">Smali</a>
+        <a href="/history">History</a>
+        <a href="/about">About</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <button class="theme-btn" id="themeToggleBtn" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <a href="/settings" class="gear-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="/convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3"/><path d="M20 17H7M7 17l3-3M7 17l3 3"/></svg>Convert</a>
+    <a href="/smali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l-6 8 6 8M16 4l6 8-6 8"/></svg>Smali</a>
+    <a href="/history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</a>
+    <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </div>
+</div>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px;">
+    <span class="eyebrow">Smali</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Java ↔ Smali</h1>
+    <p class="lede" style="margin-top:8px;">Disassemble compiled bytecode into readable Smali, or reassemble edited Smali back into a DEX file.</p>
+
+    <div class="tabs" style="margin-top:28px;">
+      <div class="tab glass-tab active" data-mode="j2s" style="border-radius:10px; padding:11px; text-align:center; cursor:pointer; font-size:14px; font-weight:600;">Java → Smali</div>
+      <div class="tab glass-tab" data-mode="s2d" style="border-radius:10px; padding:11px; text-align:center; cursor:pointer; font-size:14px; font-weight:600; margin-left:8px;">Smali → DEX</div>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px; align-items:start;">
+      <div class="glass-card" style="padding:24px;">
+
+        <!-- Java -> Smali mode -->
+        <div id="mode-j2s">
+          <div class="tabs">
+            <div class="tab glass-tab active" data-subtab="upload">Upload Files</div>
+            <div class="tab glass-tab" data-subtab="paste">Paste Code</div>
+          </div>
+
+          <div class="panel active" id="subpanel-upload">
+            <div class="dropzone glass-panel" id="dropzoneJ2S">
+              <div class="dz-icon">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M8 4l-6 8 6 8M16 4l6 8-6 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Click to choose .java files<br/>or drag &amp; drop them here</p>
+              <p style="margin-top:8px; font-size:11.5px;">.java files, or a .zip project</p>
+            </div>
+            <input type="file" id="fileInputJ2S" accept=".java,.zip" multiple />
+          </div>
+
+          <div class="panel" id="subpanel-paste">
+            <label class="field-label">Filename (auto-detected)</label>
+            <input type="text" id="pasteFilenameJ2S" placeholder="MyClass.java" />
+            <textarea id="pasteCodeJ2S" placeholder="Paste your Java code here..." spellcheck="false"></textarea>
+            <div class="paste-actions">
+              <span class="charcount" id="charcountJ2S">0 characters</span>
+              <button class="btn btn-ghost btn-sm" id="addPasteBtnJ2S">+ Add to queue</button>
+            </div>
+          </div>
+
+          <div class="filelist" id="filelistWrapJ2S" style="display:none;">
+            <h3>Queue</h3>
+            <div id="fileListJ2S"></div>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="j2sBtn" disabled style="margin-top:20px;">Disassemble to Smali</button>
+        </div>
+
+        <!-- Smali -> DEX mode -->
+        <div id="mode-s2d" style="display:none;">
+          <div class="tabs">
+            <div class="tab glass-tab active" data-subtab2="upload">Upload Files</div>
+            <div class="tab glass-tab" data-subtab2="paste">Paste Smali</div>
+          </div>
+
+          <div class="panel active" id="subpanel2-upload">
+            <div class="dropzone glass-panel" id="dropzoneS2D">
+              <div class="dz-icon">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M16 4l6 8-6 8M8 4l-6 8 6 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Click to choose .smali files<br/>or drag &amp; drop them here</p>
+              <p style="margin-top:8px; font-size:11.5px;">.smali files, or a .zip of them</p>
+            </div>
+            <input type="file" id="fileInputS2D" accept=".smali,.zip" multiple />
+          </div>
+
+          <div class="panel" id="subpanel2-paste">
+            <label class="field-label">Filename</label>
+            <input type="text" id="pasteFilenameS2D" placeholder="MyClass.smali" />
+            <textarea id="pasteCodeS2D" placeholder="Paste your .smali source here..." spellcheck="false"></textarea>
+            <div class="paste-actions">
+              <span class="charcount" id="charcountS2D">0 characters</span>
+              <button class="btn btn-ghost btn-sm" id="addPasteBtnS2D">+ Add to queue</button>
+            </div>
+          </div>
+
+          <div class="filelist" id="filelistWrapS2D" style="display:none;">
+            <h3>Queue</h3>
+            <div id="fileListS2D"></div>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="s2dBtn" disabled style="margin-top:20px;">Assemble to DEX</button>
+        </div>
+
+        <div id="progressWrap" style="display:none; margin-top:14px;">
+          <div style="height:6px; background:rgba(0,0,0,0.2); border-radius:4px; overflow:hidden;">
+            <div id="progressBar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--copper), var(--teal)); transition:width 0.15s;"></div>
+          </div>
+          <div id="progressLabel" style="font-size:11.5px; color:var(--muted-2); font-family:var(--font-mono); margin-top:6px;">Uploading… 0%</div>
+        </div>
+        <div class="status" id="status"></div>
+        <div id="errorActions" style="display:none; margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" id="copyErrorBtn">📋 Copy all errors</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="glass-card" style="padding:22px; margin-bottom:20px;">
+          <h3 style="margin-bottom:10px; font-size:14px;">Stats</h3>
+          <div id="statsBody" style="font-size:12.5px; font-family:var(--font-mono); color:var(--muted); line-height:1.9;">Run a conversion to see method/field counts.</div>
+        </div>
+        <div class="glass-card" style="padding:0; overflow:hidden;">
+          <div style="padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="font-size:13px; margin:0;">Preview <span style="color:var(--muted-2); font-weight:400;" id="previewFileName"></span></h3>
+            <button class="btn btn-ghost btn-sm" id="copyPreviewBtn" style="display:none;">📋 Copy</button>
+          </div>
+          <pre id="previewBody" class="glass-panel" style="margin:14px; padding:16px; font-family:var(--font-mono); font-size:11.5px; line-height:1.7; color:var(--text); max-height:420px; overflow:auto; white-space:pre-wrap; border:none;">No preview yet — convert something to see its Smali source here.</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>java2dex — javac + d8 + baksmali/smali, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+<script src="/js/history.js"></script>
+<script src="/js/notify.js"></script>
+<script>
+  // ---- mode switching (Java->Smali vs Smali->DEX) ----
+  document.querySelectorAll('.tabs > .tab[data-mode]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabs > .tab[data-mode]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const mode = tab.dataset.mode;
+      document.getElementById('mode-j2s').style.display = mode === 'j2s' ? 'block' : 'none';
+      document.getElementById('mode-s2d').style.display = mode === 's2d' ? 'block' : 'none';
+      document.getElementById('status').classList.remove('show');
+      document.getElementById('errorActions').style.display = 'none';
+    });
+  });
+
+  // ---- sub-tab switching (upload/paste) for each mode ----
+  function wireSubtabs(attr, panelPrefix) {
+    document.querySelectorAll(`.tab[${attr}]`).forEach(tab => {
+      tab.addEventListener('click', () => {
+        const group = tab.closest('#mode-j2s, #mode-s2d');
+        group.querySelectorAll(`.tab[${attr}]`).forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        group.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        group.querySelector(`#${panelPrefix}-${tab.getAttribute(attr)}`).classList.add('active');
+      });
+    });
+  }
+  wireSubtabs('data-subtab', 'subpanel');
+  wireSubtabs('data-subtab2', 'subpanel2');
+
+  function detectClassName(code) {
+    let m = code.match(/\\bpublic\\s+(?:final\\s+|abstract\\s+)*(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    if (m) return m[1];
+    m = code.match(/\\b(?:class|interface|enum|record)\\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    return m ? m[1] : null;
+  }
+
+  function xhrUpload(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.responseType = 'blob';
+      xhr.upload.addEventListener('progress', (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); });
+      xhr.onload = () => resolve(xhr);
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
+    });
+  }
+
+  const statusEl = document.getElementById('status');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressLabel = document.getElementById('progressLabel');
+  const errorActions = document.getElementById('errorActions');
+  const copyErrorBtn = document.getElementById('copyErrorBtn');
+  const statsBody = document.getElementById('statsBody');
+  const previewBody = document.getElementById('previewBody');
+  const previewFileName = document.getElementById('previewFileName');
+  const copyPreviewBtn = document.getElementById('copyPreviewBtn');
+  let lastErrorText = '';
+
+  function showStatus(msg, type) { statusEl.textContent = msg; statusEl.className = `status show ${type}`; }
+  copyErrorBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(lastErrorText); showToast('Error copied to clipboard'); }
+    catch (e) { showToast('Could not copy — select manually'); }
+  });
+  copyPreviewBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(previewBody.textContent); showToast('Preview copied to clipboard'); }
+    catch (e) { showToast('Could not copy — select manually'); }
+  });
+
+  // =========================================================
+  // JAVA -> SMALI
+  // =========================================================
+  let j2sFiles = [];
+  const fileListJ2S = document.getElementById('fileListJ2S');
+  const filelistWrapJ2S = document.getElementById('filelistWrapJ2S');
+  const j2sBtn = document.getElementById('j2sBtn');
+
+  function renderJ2SList() {
+    fileListJ2S.innerHTML = '';
+    filelistWrapJ2S.style.display = j2sFiles.length ? 'block' : 'none';
+    j2sFiles.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.className = 'fileitem';
+      const badgeClass = entry.type === 'pasted' ? 'badge-pasted' : entry.type === 'zip' ? 'badge-progress' : 'badge-file';
+      div.innerHTML = `<span class="badge ${badgeClass}">${entry.type}</span><span class="name">${entry.name}</span><span class="size">${(entry.source.size / 1024).toFixed(1)} KB</span>`;
+      const btn = document.createElement('button');
+      btn.className = 'remove'; btn.textContent = 'remove';
+      btn.onclick = () => { j2sFiles.splice(i, 1); renderJ2SList(); };
+      div.appendChild(btn);
+      fileListJ2S.appendChild(div);
+    });
+    j2sBtn.disabled = j2sFiles.length === 0;
+  }
+
+  const dropzoneJ2S = document.getElementById('dropzoneJ2S');
+  const fileInputJ2S = document.getElementById('fileInputJ2S');
+  dropzoneJ2S.addEventListener('click', () => fileInputJ2S.click());
+  dropzoneJ2S.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneJ2S.classList.add('drag'); });
+  dropzoneJ2S.addEventListener('dragleave', () => dropzoneJ2S.classList.remove('drag'));
+  dropzoneJ2S.addEventListener('drop', (e) => { e.preventDefault(); dropzoneJ2S.classList.remove('drag'); addJ2SFiles(e.dataTransfer.files); });
+  fileInputJ2S.addEventListener('change', () => { addJ2SFiles(fileInputJ2S.files); fileInputJ2S.value = ''; });
+
+  function addJ2SFiles(fileListObj) {
+    let added = 0;
+    for (const f of fileListObj) {
+      const lower = f.name.toLowerCase();
+      if (lower.endsWith('.java')) { j2sFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      else if (lower.endsWith('.zip')) { j2sFiles.push({ name: f.name, source: f, type: 'zip' }); added++; }
+    }
+    renderJ2SList();
+    if (added) showToast(added + ' file(s) added');
+  }
+
+  const pasteCodeJ2S = document.getElementById('pasteCodeJ2S');
+  const pasteFilenameJ2S = document.getElementById('pasteFilenameJ2S');
+  pasteCodeJ2S.addEventListener('input', () => {
+    document.getElementById('charcountJ2S').textContent = pasteCodeJ2S.value.length.toLocaleString() + ' characters';
+    if (!pasteFilenameJ2S.dataset.userEdited) {
+      const name = detectClassName(pasteCodeJ2S.value);
+      pasteFilenameJ2S.value = name ? name + '.java' : '';
+    }
+  });
+  pasteFilenameJ2S.addEventListener('input', () => { pasteFilenameJ2S.dataset.userEdited = '1'; });
+  document.getElementById('addPasteBtnJ2S').addEventListener('click', () => {
+    const code = pasteCodeJ2S.value;
+    if (!code.trim()) { showStatus('Paste some Java code first.', 'error'); return; }
+    let filename = pasteFilenameJ2S.value.trim() || ('Pasted' + Date.now() + '.java');
+    if (!filename.endsWith('.java')) filename += '.java';
+    const file = new File([new Blob([code], { type: 'text/plain' })], filename, { type: 'text/plain' });
+    j2sFiles.push({ name: filename, source: file, type: 'pasted' });
+    renderJ2SList();
+    pasteCodeJ2S.value = ''; pasteFilenameJ2S.value = ''; delete pasteFilenameJ2S.dataset.userEdited;
+    document.getElementById('charcountJ2S').textContent = '0 characters';
+    showToast(filename + ' added');
+  });
+
+  j2sBtn.addEventListener('click', async () => {
+    if (j2sFiles.length === 0) return;
+    j2sBtn.disabled = true;
+    errorActions.style.display = 'none';
+    showStatus('Uploading…', 'info');
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+
+    j2dEnsureNotifyPermission();
+    j2dNotify('java2dex', 'Disassembling to Smali…', null);
+
+    const formData = new FormData();
+    j2sFiles.forEach(e => formData.append('javaFiles', e.source, e.name));
+    const inputMeta = j2sFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
+
+    try {
+      const xhr = await xhrUpload('/java-to-smali', formData, (pct) => {
+        progressBar.style.width = pct + '%';
+        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Compiling & disassembling…';
+        if (pct >= 100) showStatus('Compiling & disassembling…', 'info');
+      });
+      progressWrap.style.display = 'none';
+
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const text = await xhr.response.text();
+        let errJson = {}; try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Conversion failed', details: text }; }
+        lastErrorText = (errJson.error || 'Failed') + (errJson.details ? '\\n\\n' + errJson.details : '');
+        showStatus(lastErrorText, 'error');
+        errorActions.style.display = 'block';
+        j2dNotify('java2dex — failed', errJson.error || 'Smali conversion failed', null);
+        J2DHistory.add({ kind: 'java-to-smali', inputFiles: inputMeta, status: 'error', errorMessage: lastErrorText.slice(0, 400) });
+        j2sBtn.disabled = false;
+        return;
+      }
+
+      const blob = xhr.response;
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match ? match[1] : 'smali-output.zip';
+      const smaliCount = xhr.getResponseHeader('X-Smali-File-Count');
+      const methodCount = xhr.getResponseHeader('X-Method-Count');
+      const fieldCount = xhr.getResponseHeader('X-Field-Count');
+      const previewRaw = xhr.getResponseHeader('X-Smali-Preview');
+
+      statsBody.innerHTML = `
+        <div>Smali files: <strong style="color:var(--text);">${smaliCount || '—'}</strong></div>
+        <div>Methods: <strong style="color:var(--text);">${methodCount || '—'}</strong> <span style="color:var(--muted-2);">/ 65536 per dex</span></div>
+        <div>Fields: <strong style="color:var(--text);">${fieldCount || '—'}</strong> <span style="color:var(--muted-2);">/ 65536 per dex</span></div>`;
+
+      if (previewRaw) {
+        previewBody.textContent = decodeURIComponent(previewRaw);
+        previewFileName.textContent = '— first file';
+        copyPreviewBtn.style.display = 'inline-flex';
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+
+      showStatus(`Done — downloaded ${filename}`, 'success');
+      j2dNotify('java2dex — done ✓', `Downloaded ${filename}`, 'Saved to History');
+
+      const historyEntry = { kind: 'java-to-smali', inputFiles: inputMeta, status: 'success', outputName: filename, outputSizeBytes: blob.size };
+      if (blob.size <= J2DHistory.maxStoredOutputBytes) {
+        try { historyEntry.outputBase64 = await blobToBase64(blob); } catch (e) {}
+      }
+      J2DHistory.add(historyEntry);
+    } catch (err) {
+      progressWrap.style.display = 'none';
+      showStatus('Network error: ' + err.message, 'error');
+      lastErrorText = 'Network error: ' + err.message;
+      errorActions.style.display = 'block';
+      j2dNotify('java2dex — error', 'Network error', null);
+    } finally {
+      j2sBtn.disabled = false;
+    }
+  });
+
+  // =========================================================
+  // SMALI -> DEX
+  // =========================================================
+  let s2dFiles = [];
+  const fileListS2D = document.getElementById('fileListS2D');
+  const filelistWrapS2D = document.getElementById('filelistWrapS2D');
+  const s2dBtn = document.getElementById('s2dBtn');
+
+  function renderS2DList() {
+    fileListS2D.innerHTML = '';
+    filelistWrapS2D.style.display = s2dFiles.length ? 'block' : 'none';
+    s2dFiles.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.className = 'fileitem';
+      const badgeClass = entry.type === 'pasted' ? 'badge-pasted' : entry.type === 'zip' ? 'badge-progress' : 'badge-file';
+      div.innerHTML = `<span class="badge ${badgeClass}">${entry.type}</span><span class="name">${entry.name}</span><span class="size">${(entry.source.size / 1024).toFixed(1)} KB</span>`;
+      const btn = document.createElement('button');
+      btn.className = 'remove'; btn.textContent = 'remove';
+      btn.onclick = () => { s2dFiles.splice(i, 1); renderS2DList(); };
+      div.appendChild(btn);
+      fileListS2D.appendChild(div);
+    });
+    s2dBtn.disabled = s2dFiles.length === 0;
+  }
+
+  const dropzoneS2D = document.getElementById('dropzoneS2D');
+  const fileInputS2D = document.getElementById('fileInputS2D');
+  dropzoneS2D.addEventListener('click', () => fileInputS2D.click());
+  dropzoneS2D.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneS2D.classList.add('drag'); });
+  dropzoneS2D.addEventListener('dragleave', () => dropzoneS2D.classList.remove('drag'));
+  dropzoneS2D.addEventListener('drop', (e) => { e.preventDefault(); dropzoneS2D.classList.remove('drag'); addS2DFiles(e.dataTransfer.files); });
+  fileInputS2D.addEventListener('change', () => { addS2DFiles(fileInputS2D.files); fileInputS2D.value = ''; });
+
+  function addS2DFiles(fileListObj) {
+    let added = 0;
+    for (const f of fileListObj) {
+      const lower = f.name.toLowerCase();
+      if (lower.endsWith('.smali')) { s2dFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      else if (lower.endsWith('.zip')) { s2dFiles.push({ name: f.name, source: f, type: 'zip' }); added++; }
+    }
+    renderS2DList();
+    if (added) showToast(added + ' file(s) added');
+  }
+
+  const pasteCodeS2D = document.getElementById('pasteCodeS2D');
+  const pasteFilenameS2D = document.getElementById('pasteFilenameS2D');
+  pasteCodeS2D.addEventListener('input', () => {
+    document.getElementById('charcountS2D').textContent = pasteCodeS2D.value.length.toLocaleString() + ' characters';
+  });
+  document.getElementById('addPasteBtnS2D').addEventListener('click', () => {
+    const code = pasteCodeS2D.value;
+    if (!code.trim()) { showStatus('Paste some Smali code first.', 'error'); return; }
+    let filename = pasteFilenameS2D.value.trim() || ('Pasted' + Date.now() + '.smali');
+    if (!filename.endsWith('.smali')) filename += '.smali';
+    const file = new File([new Blob([code], { type: 'text/plain' })], filename, { type: 'text/plain' });
+    s2dFiles.push({ name: filename, source: file, type: 'pasted' });
+    renderS2DList();
+    pasteCodeS2D.value = ''; pasteFilenameS2D.value = '';
+    document.getElementById('charcountS2D').textContent = '0 characters';
+    showToast(filename + ' added');
+  });
+
+  s2dBtn.addEventListener('click', async () => {
+    if (s2dFiles.length === 0) return;
+    s2dBtn.disabled = true;
+    errorActions.style.display = 'none';
+    showStatus('Uploading…', 'info');
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+
+    j2dEnsureNotifyPermission();
+    j2dNotify('java2dex', 'Assembling Smali to DEX…', null);
+
+    const formData = new FormData();
+    s2dFiles.forEach(e => formData.append('smaliFiles', e.source, e.name));
+    const inputMeta = s2dFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
+
+    try {
+      const xhr = await xhrUpload('/smali-to-dex', formData, (pct) => {
+        progressBar.style.width = pct + '%';
+        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Assembling…';
+        if (pct >= 100) showStatus('Assembling…', 'info');
+      });
+      progressWrap.style.display = 'none';
+
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const text = await xhr.response.text();
+        let errJson = {}; try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Assembly failed', details: text }; }
+        lastErrorText = (errJson.error || 'Failed') + (errJson.details ? '\\n\\n' + errJson.details : '');
+        showStatus(lastErrorText, 'error');
+        errorActions.style.display = 'block';
+        j2dNotify('java2dex — failed', errJson.error || 'Smali assembly failed', null);
+        J2DHistory.add({ kind: 'smali-to-dex', inputFiles: inputMeta, status: 'error', errorMessage: lastErrorText.slice(0, 400) });
+        s2dBtn.disabled = false;
+        return;
+      }
+
+      const blob = xhr.response;
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match ? match[1] : 'classes.dex';
+
+      statsBody.innerHTML = `<div>Output: <strong style="color:var(--text);">${filename}</strong></div><div>Size: <strong style="color:var(--text);">${(blob.size / 1024).toFixed(1)} KB</strong></div>`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+
+      showStatus(`Done — downloaded ${filename}`, 'success');
+      j2dNotify('java2dex — done ✓', `Downloaded ${filename}`, 'Saved to History');
+
+      const historyEntry = { kind: 'smali-to-dex', inputFiles: inputMeta, status: 'success', outputName: filename, outputSizeBytes: blob.size };
+      if (blob.size <= J2DHistory.maxStoredOutputBytes) {
+        try { historyEntry.outputBase64 = await blobToBase64(blob); } catch (e) {}
+      }
+      J2DHistory.add(historyEntry);
+    } catch (err) {
+      progressWrap.style.display = 'none';
+      showStatus('Network error: ' + err.message, 'error');
+      lastErrorText = 'Network error: ' + err.message;
+      errorActions.style.display = 'block';
+      j2dNotify('java2dex — error', 'Network error', null);
+    } finally {
+      s2dBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
