@@ -52,6 +52,17 @@ RUN mkdir -p /opt/smali && \
 ENV BAKSMALI_JAR="/opt/smali/baksmali.jar"
 ENV SMALI_JAR="/opt/smali/smali.jar"
 
+# ---- Kotlin compiler (kotlinc) ----
+ENV KOTLIN_VERSION=2.1.20
+RUN mkdir -p /opt && \
+    wget -q "https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip" -O /tmp/kotlinc.zip && \
+    unzip -q /tmp/kotlinc.zip -d /opt && \
+    chmod +x /opt/kotlinc/bin/* && \
+    rm /tmp/kotlinc.zip
+
+ENV PATH="/opt/kotlinc/bin:${PATH}"
+ENV KOTLINC_PATH="/opt/kotlinc/bin/kotlinc"
+
 # ---- AndroidX / Material classes (optional, best-effort) ----
 # Extracts classes.jar out of a few common AAR artifacts so code referencing
 # androidx.* / com.google.android.material.* can compile too. Each download

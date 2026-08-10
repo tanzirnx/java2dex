@@ -22,6 +22,7 @@ const ANDROID_JAR = process.env.ANDROID_JAR || ""; // optional, only needed if c
 const JADX_PATH = process.env.JADX_PATH || "jadx";
 const BAKSMALI_JAR = process.env.BAKSMALI_JAR || "/opt/smali/baksmali.jar";
 const SMALI_JAR = process.env.SMALI_JAR || "/opt/smali/smali.jar";
+const KOTLINC_PATH = process.env.KOTLINC_PATH || "kotlinc";
 
 // ---- AndroidX classpath (optional) ----
 // If /opt/androidx-libs (or ANDROIDX_LIBS_DIR) contains .jar files — extracted
@@ -100,6 +101,8 @@ app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public", "about.html")));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
 app.get("/smali", (req, res) => res.sendFile(path.join(__dirname, "public", "smali.html")));
+app.get("/kotlin", (req, res) => res.sendFile(path.join(__dirname, "public", "kotlin.html")));
+app.get("/method-converter", (req, res) => res.sendFile(path.join(__dirname, "public", "method-converter.html")));
 
 // Web Share Target endpoint — OS "Share to java2dex" lands here with file(s)
 app.post("/convert-share", upload.array("javaFiles"), async (req, res) => {
@@ -685,6 +688,283 @@ app.post("/smali-to-dex", upload.array("smaliFiles"), async (req, res) => {
     cleanup(workDir);
   }
 });
+
+// ---- Kotlin -> DEX: kotlinc -> d8 ----
+// Note: kotlinc compiles directly to .class (no javac step). Code using the
+// Kotlin stdlib dexes fine (d8 doesn't need referenced classes present), but
+// the stdlib itself must be bundled separately into any real APK to run —
+// unlike android.jar, it's not provided by the OS. See /help for details.
+app.post("/kotlin-to-dex", upload.array("kotlinFiles"), async (req, res) => {
+  const jobId = uuidv4();
+  const workDir = path.join(os.tmpdir(), "java2dex-kotlin-jobs", jobId);
+  const srcDir = path.join(workDir, "src");
+  const classDir = path.join(workDir, "classes");
+  const dexDir = path.join(workDir, "dex");
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded. Attach one or more .kt files, or a .zip project." });
+    }
+    await fsp.mkdir(srcDir, { recursive: true });
+    await fsp.mkdir(classDir, { recursive: true });
+    await fsp.mkdir(dexDir, { recursive: true });
+
+    const ktFilePaths = [];
+    for (const file of req.files) {
+      const lowerName = file.originalname.toLowerCase();
+      if (lowerName.endsWith(".zip")) {
+        try {
+          const zip = new AdmZip(file.path);
+          zip.getEntries().forEach((entry) => {
+            if (entry.isDirectory || !entry.entryName.toLowerCase().endsWith(".kt")) return;
+            const outPath = path.join(srcDir, path.basename(entry.entryName));
+            fs.writeFileSync(outPath, entry.getData());
+            ktFilePaths.push(outPath);
+          });
+        } catch (zipErr) {
+          console.warn("Zip extraction failed for", file.originalname, zipErr.message);
+        }
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      if (!lowerName.endsWith(".kt")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const dest = path.join(srcDir, path.basename(file.originalname));
+      await fsp.rename(file.path, dest);
+      ktFilePaths.push(dest);
+    }
+
+    if (ktFilePaths.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "No .kt files found. Attach .kt files directly, or a .zip containing them." });
+    }
+
+    const kotlincArgs = ["-d", classDir];
+    const classpathParts = [];
+    if (ANDROID_JAR) classpathParts.push(ANDROID_JAR);
+    classpathParts.push(...getAndroidxClasspath());
+    if (classpathParts.length) kotlincArgs.push("-classpath", classpathParts.join(path.delimiter));
+    kotlincArgs.push(...ktFilePaths);
+
+    try {
+      await run(KOTLINC_PATH, kotlincArgs, { maxBuffer: 1024 * 1024 * 50 });
+    } catch (compileErr) {
+      cleanup(workDir);
+      const rawDetails = compileErr.stderr || compileErr.stdout || compileErr.message || "";
+      return res.status(400).json({ error: "Kotlin compilation failed", details: rawDetails });
+    }
+
+    const classFiles = await walkFiles(classDir, [".class"]);
+    if (classFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "Compilation produced no .class files." });
+    }
+    const classNames = classFiles.map((f) => path.relative(classDir, f).replace(/\.class$/, "").split(path.sep).join("."));
+
+    const d8Args = ["--output", dexDir];
+    const minApi = (req.body && req.body.minApi || "").trim();
+    if (minApi && /^\d+$/.test(minApi)) d8Args.push("--min-api", minApi);
+
+    const mainDexRaw = (req.body && req.body.mainDexClasses) || "";
+    const requestedMainDex = mainDexRaw.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+    let mainDexMatched = [], mainDexUnmatched = [];
+    if (requestedMainDex.length) {
+      requestedMainDex.forEach((wanted) => {
+        const hit = classNames.find((cn) => cn === wanted || cn.endsWith("." + wanted) || cn === wanted.replace(/\./g, "$"));
+        if (hit) mainDexMatched.push(hit); else mainDexUnmatched.push(wanted);
+      });
+      if (mainDexMatched.length) {
+        const mainDexListPath = path.join(workDir, "main-dex-list.txt");
+        await fsp.writeFile(mainDexListPath, mainDexMatched.map((cn) => cn.split(".").join("/") + ".class").join("\n") + "\n", "utf8");
+        d8Args.push("--main-dex-list", mainDexListPath);
+      }
+    }
+    d8Args.push(...classFiles);
+
+    try {
+      await run(D8_PATH, d8Args);
+    } catch (dexErr) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "DEX conversion failed", details: dexErr.stderr || dexErr.message });
+    }
+
+    const dexFiles = await walkFiles(dexDir, [".dex"]);
+    if (dexFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "d8 ran but produced no .dex output." });
+    }
+
+    res.setHeader("X-Compiled-Class-Count", String(classNames.length));
+    res.setHeader("X-Compiled-Classes", encodeURIComponent(classNames.slice(0, 200).join(",")));
+    res.setHeader("X-Dex-File-Count", String(dexFiles.length));
+    if (requestedMainDex.length) {
+      res.setHeader("X-MainDex-Matched", String(mainDexMatched.length));
+      if (mainDexUnmatched.length) res.setHeader("X-MainDex-Unmatched", encodeURIComponent(mainDexUnmatched.join(",")));
+    }
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "X-Compiled-Class-Count, X-Compiled-Classes, X-Dex-File-Count, X-MainDex-Matched, X-MainDex-Unmatched, Content-Disposition"
+    );
+
+    if (dexFiles.length === 1) {
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Disposition", 'attachment; filename="classes.dex"');
+      const stream = fs.createReadStream(dexFiles[0]);
+      stream.pipe(res);
+      stream.on("close", () => cleanup(workDir));
+      return;
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", 'attachment; filename="dex-output.zip"');
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+    for (const f of dexFiles) archive.file(f, { name: path.basename(f) });
+    await archive.finalize();
+    archive.on("end", () => cleanup(workDir));
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) res.status(500).json({ error: "Unexpected server error", details: err.message });
+    cleanup(workDir);
+  }
+});
+
+// ---- Kotlin -> Smali: kotlinc -> d8 -> baksmali ----
+app.post("/kotlin-to-smali", upload.array("kotlinFiles"), async (req, res) => {
+  const jobId = uuidv4();
+  const workDir = path.join(os.tmpdir(), "java2dex-kotlin-smali-jobs", jobId);
+  const srcDir = path.join(workDir, "src");
+  const classDir = path.join(workDir, "classes");
+  const dexDir = path.join(workDir, "dex");
+  const smaliDir = path.join(workDir, "smali");
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded. Attach one or more .kt files, or a .zip project." });
+    }
+    await fsp.mkdir(srcDir, { recursive: true });
+    await fsp.mkdir(classDir, { recursive: true });
+    await fsp.mkdir(dexDir, { recursive: true });
+    await fsp.mkdir(smaliDir, { recursive: true });
+
+    const ktFilePaths = [];
+    for (const file of req.files) {
+      const lowerName = file.originalname.toLowerCase();
+      if (lowerName.endsWith(".zip")) {
+        try {
+          const zip = new AdmZip(file.path);
+          zip.getEntries().forEach((entry) => {
+            if (entry.isDirectory || !entry.entryName.toLowerCase().endsWith(".kt")) return;
+            const outPath = path.join(srcDir, path.basename(entry.entryName));
+            fs.writeFileSync(outPath, entry.getData());
+            ktFilePaths.push(outPath);
+          });
+        } catch (zipErr) {
+          console.warn("Zip extraction failed for", file.originalname, zipErr.message);
+        }
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      if (!lowerName.endsWith(".kt")) {
+        await fsp.unlink(file.path).catch(() => {});
+        continue;
+      }
+      const dest = path.join(srcDir, path.basename(file.originalname));
+      await fsp.rename(file.path, dest);
+      ktFilePaths.push(dest);
+    }
+
+    if (ktFilePaths.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "No .kt files found. Attach .kt files directly, or a .zip containing them." });
+    }
+
+    const kotlincArgs = ["-d", classDir];
+    const classpathParts = [];
+    if (ANDROID_JAR) classpathParts.push(ANDROID_JAR);
+    classpathParts.push(...getAndroidxClasspath());
+    if (classpathParts.length) kotlincArgs.push("-classpath", classpathParts.join(path.delimiter));
+    kotlincArgs.push(...ktFilePaths);
+
+    try {
+      await run(KOTLINC_PATH, kotlincArgs, { maxBuffer: 1024 * 1024 * 50 });
+    } catch (compileErr) {
+      cleanup(workDir);
+      const rawDetails = compileErr.stderr || compileErr.stdout || compileErr.message || "";
+      return res.status(400).json({ error: "Kotlin compilation failed", details: rawDetails });
+    }
+
+    const classFiles = await walkFiles(classDir, [".class"]);
+    if (classFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(400).json({ error: "Compilation produced no .class files." });
+    }
+
+    try {
+      await run(D8_PATH, ["--output", dexDir, ...classFiles]);
+    } catch (dexErr) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "DEX conversion failed", details: dexErr.stderr || dexErr.message });
+    }
+
+    const dexFiles = await walkFiles(dexDir, [".dex"]);
+    if (dexFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "d8 ran but produced no .dex output." });
+    }
+
+    try {
+      await run("java", ["-jar", BAKSMALI_JAR, "disassemble", "-o", smaliDir, ...dexFiles]);
+    } catch (baksmaliErr) {
+      cleanup(workDir);
+      return res.status(500).json({
+        error: "Smali disassembly failed",
+        details: baksmaliErr.stderr || baksmaliErr.stdout || baksmaliErr.message,
+      });
+    }
+
+    const smaliFiles = await walkFiles(smaliDir, [".smali"]);
+    if (smaliFiles.length === 0) {
+      cleanup(workDir);
+      return res.status(500).json({ error: "baksmali ran but produced no .smali output." });
+    }
+
+    let methodCount = 0, fieldCount = 0, firstSmaliPreview = "";
+    for (let i = 0; i < smaliFiles.length; i++) {
+      const content = await fsp.readFile(smaliFiles[i], "utf8");
+      methodCount += (content.match(/^\s*\.method\s/gm) || []).length;
+      fieldCount += (content.match(/^\s*\.field\s/gm) || []).length;
+      if (i === 0) firstSmaliPreview = content.slice(0, 8000);
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", 'attachment; filename="smali-output.zip"');
+    res.setHeader("X-Smali-File-Count", String(smaliFiles.length));
+    res.setHeader("X-Method-Count", String(methodCount));
+    res.setHeader("X-Field-Count", String(fieldCount));
+    res.setHeader("X-Smali-Preview", encodeURIComponent(firstSmaliPreview));
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "X-Smali-File-Count, X-Method-Count, X-Field-Count, X-Smali-Preview, Content-Disposition"
+    );
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
+    for (const f of smaliFiles) {
+      const relative = path.relative(smaliDir, f).split(path.sep).join("/");
+      archive.file(f, { name: relative });
+    }
+    await archive.finalize();
+    archive.on("end", () => cleanup(workDir));
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) res.status(500).json({ error: "Unexpected server error", details: err.message });
+    cleanup(workDir);
+  }
+});
+
 app.get("/api/push/vapid-public-key", (req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });

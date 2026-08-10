@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Method Converter — JaKo Compile</title>
+<meta name="description" content="Convert a Java method call into the equivalent Smali invoke instruction — with register, class path, method signature, and a plain-English breakdown." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230D0A1C'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%238B5CF6' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%238B5CF6' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0D0A1C" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="glass-bg" aria-hidden="true">
+  <div class="glass-blob copper"></div>
+  <div class="glass-blob teal"></div>
+  <div class="glass-blob pink"></div>
+</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span class="brand-chip"></span>JaKo Compile</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/convert">Convert</a>
+        <a href="/decompile">Decompile</a>
+        <a href="/smali">Smali</a>
+        <a href="/kotlin">Kotlin</a>
+        <a href="/method-converter" class="active">Method Conv.</a>
+        <a href="/history">History</a>
+        <a href="/help">Help</a>
+      </div>
+      <button class="btn btn-primary btn-sm install-btn">⤓ Install App</button>
+      <button class="theme-btn" id="themeToggleBtn" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <a href="/settings" class="gear-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="/convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M17 7l-3-3M17 7l-3 3"/><path d="M20 17H7M7 17l3-3M7 17l3 3"/></svg>Convert</a>
+    <a href="/smali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l-6 8 6 8M16 4l6 8-6 8"/></svg>Smali</a>
+    <a href="/history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</a>
+    <a href="/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </div>
+</div>
+
+<main class="page-main">
+  <section class="wrap" style="padding-top:40px; max-width:900px;">
+    <span class="eyebrow">Method Converter</span>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Java call → Smali instruction</h1>
+    <p class="lede" style="margin-top:8px;">Type a method call the way you'd write it in Java, fill in a few details, and get the exact <code>invoke-*</code> line you'd need in a <code>.smali</code> file — with every part explained.</p>
+
+    <div class="grid-2" style="margin-top:28px; align-items:start;">
+      <div class="card">
+        <label class="field-label">Java method call <span style="color:var(--muted-2);">(for reference — doesn't need to be parsed perfectly)</span></label>
+        <input type="text" id="javaCall" placeholder="TzPowerfulDialog.show(this);" style="font-family:var(--font-mono);" />
+
+        <label class="field-label">Invocation type</label>
+        <select id="invokeType" style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid var(--line); background:var(--ink-2); color:var(--text); font-size:14px; margin-bottom:12px; font-family:var(--font-mono);">
+          <option value="static">invoke-static (static method — no receiver)</option>
+          <option value="virtual">invoke-virtual (instance method, normal call)</option>
+          <option value="direct">invoke-direct (constructors, private methods)</option>
+          <option value="interface">invoke-interface (interface method)</option>
+        </select>
+
+        <label class="field-label">Class / package name</label>
+        <input type="text" id="className" placeholder="com.tanzir.util.TzPowerfulDialog" style="font-family:var(--font-mono);" />
+
+        <label class="field-label">Method name</label>
+        <input type="text" id="methodName" placeholder="show" style="font-family:var(--font-mono);" />
+
+        <label class="field-label">Parameters <span style="color:var(--muted-2);">(comma-separated Java types, blank if none)</span></label>
+        <input type="text" id="paramTypes" placeholder="android.app.Activity" style="font-family:var(--font-mono);" />
+
+        <label class="field-label">Return type</label>
+        <input type="text" id="returnType" placeholder="void" style="font-family:var(--font-mono);" value="void" />
+
+        <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="convertBtn" style="flex:1; min-width:120px;">Convert</button>
+          <button class="btn btn-ghost" id="exampleBtn">Example</button>
+          <button class="btn btn-ghost" id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:14px;">Generated Smali</h3>
+            <button class="btn btn-ghost btn-sm" id="copyBtn">📋 Copy</button>
+          </div>
+          <pre id="smaliOutput" style="margin:0; padding:16px; background:var(--ink-2); border-radius:10px; font-family:var(--font-mono); font-size:13px; line-height:1.7; color:var(--teal); white-space:pre-wrap; word-break:break-word; min-height:60px;">Fill in the fields and hit Convert.</pre>
+        </div>
+
+        <div class="card" id="explainCard" style="display:none;">
+          <h3 style="margin-bottom:12px; font-size:14px;">What each part means</h3>
+          <div id="explainBody" style="font-size:13px; color:var(--muted); line-height:1.9;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3 style="margin-bottom:12px;">Quick reference</h3>
+      <div class="grid-2">
+        <div>
+          <p class="muted" style="font-size:12.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Primitive types</p>
+          <table style="width:100%; font-size:13px; border-collapse:collapse;">
+            <tbody id="primitiveTable"></tbody>
+          </table>
+        </div>
+        <div>
+          <p class="muted" style="font-size:12.5px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Common object types</p>
+          <table style="width:100%; font-size:13px; border-collapse:collapse;">
+            <tbody id="commonTypesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span>JaKo Compile — javac + d8 + jadx + baksmali/smali + kotlinc, in the browser.</span>
+    <span>Free to use. No account required.</span>
+  </div>
+</footer>
+
+<script src="/js/nav.js"></script>
+<script>
+  // ---- type descriptor conversion ----
+  const PRIMITIVES = { void: 'V', boolean: 'Z', byte: 'B', char: 'C', short: 'S', int: 'I', long: 'J', float: 'F', double: 'D' };
+
+  const COMMON_TYPES = {
+    'String': 'Ljava/lang/String;',
+    'Object': 'Ljava/lang/Object;',
+    'CharSequence': 'Ljava/lang/CharSequence;',
+    'Integer': 'Ljava/lang/Integer;',
+    'Boolean': 'Ljava/lang/Boolean;',
+    'Long': 'Ljava/lang/Long;',
+    'Double': 'Ljava/lang/Double;',
+    'Float': 'Ljava/lang/Float;',
+    'List': 'Ljava/util/List;',
+    'ArrayList': 'Ljava/util/ArrayList;',
+    'Map': 'Ljava/util/Map;',
+    'HashMap': 'Ljava/util/HashMap;',
+    'Activity': 'Landroid/app/Activity;',
+    'Context': 'Landroid/content/Context;',
+    'Application': 'Landroid/app/Application;',
+    'View': 'Landroid/view/View;',
+    'ViewGroup': 'Landroid/view/ViewGroup;',
+    'Bundle': 'Landroid/os/Bundle;',
+    'Intent': 'Landroid/content/Intent;',
+    'TextView': 'Landroid/widget/TextView;',
+    'Button': 'Landroid/widget/Button;',
+    'Dialog': 'Landroid/app/Dialog;',
+    'AlertDialog': 'Landroid/app/AlertDialog;',
+    'Fragment': 'Landroid/app/Fragment;',
+  };
+
+  function javaTypeToDescriptor(rawType) {
+    let t = rawType.trim();
+    if (!t) return null;
+
+    // strip generics (erasure) — List<String> -> List
+    t = t.replace(/<.*>/, '').trim();
+
+    // arrays: count trailing [] and strip them
+    let arrayDepth = 0;
+    while (t.endsWith('[]')) { arrayDepth++; t = t.slice(0, -2).trim(); }
+
+    let core;
+    if (PRIMITIVES[t]) {
+      core = PRIMITIVES[t];
+    } else if (COMMON_TYPES[t]) {
+      core = COMMON_TYPES[t];
+    } else if (t.includes('.')) {
+      // fully-qualified dotted path -> L...;
+      core = 'L' + t.replace(/\./g, '/') + ';';
+    } else if (t.startsWith('L') && t.endsWith(';')) {
+      // already a smali descriptor
+      core = t;
+    } else if (t === '[' || /^\[+[A-Z]/.test(t)) {
+      core = t; // already an array descriptor
+    } else {
+      // simple unqualified name with no known mapping — best effort, flagged in explanation
+      core = 'L' + t + ';';
+    }
+
+    return { descriptor: '['.repeat(arrayDepth) + core, resolved: !!(PRIMITIVES[t] || COMMON_TYPES[t] || rawType.includes('.') || (t.startsWith('L') && t.endsWith(';'))) };
+  }
+
+  function classNameToDescriptor(rawClass) {
+    let c = rawClass.trim();
+    if (c.startsWith('L') && c.endsWith(';')) return c;
+    return 'L' + c.replace(/\./g, '/') + ';';
+  }
+
+  // ---- populate quick-reference tables ----
+  const primTable = document.getElementById('primitiveTable');
+  Object.entries(PRIMITIVES).forEach(([java, smali]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="padding:4px 8px 4px 0; font-family:var(--font-mono); color:var(--text);">${java}</td><td style="padding:4px 0; font-family:var(--font-mono); color:var(--copper);">${smali}</td>`;
+    primTable.appendChild(tr);
+  });
+  const commonTable = document.getElementById('commonTypesTable');
+  Object.entries(COMMON_TYPES).slice(0, 9).forEach(([java, smali]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="padding:4px 8px 4px 0; font-family:var(--font-mono); color:var(--text);">${java}</td><td style="padding:4px 0; font-family:var(--font-mono); color:var(--copper); font-size:11.5px;">${smali}</td>`;
+    commonTable.appendChild(tr);
+  });
+
+  // ---- main convert logic ----
+  const javaCallInput = document.getElementById('javaCall');
+  const invokeTypeSel = document.getElementById('invokeType');
+  const classNameInput = document.getElementById('className');
+  const methodNameInput = document.getElementById('methodName');
+  const paramTypesInput = document.getElementById('paramTypes');
+  const returnTypeInput = document.getElementById('returnType');
+  const smaliOutput = document.getElementById('smaliOutput');
+  const explainCard = document.getElementById('explainCard');
+  const explainBody = document.getElementById('explainBody');
+
+  // best-effort auto-fill from a pasted Java call like "TzPowerfulDialog.show(this);"
+  javaCallInput.addEventListener('input', () => {
+    const val = javaCallInput.value.trim();
+    const m = val.match(/^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\s*\(/);
+    if (m) {
+      if (!classNameInput.dataset.userEdited) classNameInput.value = m[1];
+      if (!methodNameInput.dataset.userEdited) methodNameInput.value = m[2];
+    }
+  });
+  [classNameInput, methodNameInput].forEach(el => el.addEventListener('input', () => { el.dataset.userEdited = '1'; }));
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function convert() {
+    const invokeType = invokeTypeSel.value;
+    const className = classNameInput.value.trim();
+    const methodName = methodNameInput.value.trim();
+    const returnRaw = returnTypeInput.value.trim() || 'void';
+    const paramsRaw = paramTypesInput.value.trim();
+
+    if (!className || !methodName) {
+      smaliOutput.textContent = 'Fill in at least the class name and method name.';
+      smaliOutput.style.color = 'var(--danger)';
+      explainCard.style.display = 'none';
+      return;
+    }
+
+    const classDescriptor = classNameToDescriptor(className);
+    const returnInfo = javaTypeToDescriptor(returnRaw) || { descriptor: 'V', resolved: true };
+
+    const paramTypeStrings = paramsRaw ? paramsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const paramInfos = paramTypeStrings.map(javaTypeToDescriptor);
+    const paramDescriptor = paramInfos.map(p => p.descriptor).join('');
+
+    // register list
+    const hasReceiver = invokeType !== 'static';
+    const totalRegs = paramTypeStrings.length + (hasReceiver ? 1 : 0);
+    const registers = [];
+    for (let i = 0; i < totalRegs; i++) registers.push('p' + i);
+
+    const smaliLine = `invoke-${invokeType} {${registers.join(', ')}}, ${classDescriptor}->${methodName}(${paramDescriptor})${returnInfo.descriptor}`;
+
+    // does the call need to capture a return value?
+    let moveResultLine = '';
+    if (returnInfo.descriptor !== 'V') {
+      const moveOp = { Z: 'move-result', B: 'move-result', C: 'move-result', S: 'move-result', I: 'move-result', F: 'move-result', J: 'move-result-wide', D: 'move-result-wide' }[returnInfo.descriptor] || 'move-result-object';
+      moveResultLine = `\n${moveOp} v0`;
+    }
+
+    smaliOutput.textContent = smaliLine + moveResultLine;
+    smaliOutput.style.color = 'var(--teal)';
+
+    // ---- explanation ----
+    let html = '';
+    html += `<div style="margin-bottom:10px;"><strong style="color:var(--text);">invoke-${invokeType}</strong> — `;
+    html += invokeType === 'static' ? 'calls a static method. No object instance is needed, so there\'s no receiver register.'
+      : invokeType === 'virtual' ? 'calls a normal instance method — the usual case for public/protected non-static methods.'
+      : invokeType === 'direct' ? 'calls a constructor, a private method, or a superclass method directly (not looked up virtually).'
+      : 'calls a method declared on an interface, resolved at runtime by the object\'s actual type.';
+    html += '</div>';
+
+    html += `<div style="margin-bottom:10px;"><strong style="color:var(--text);">{${registers.join(', ')}}</strong> — `;
+    if (hasReceiver) {
+      html += `<code>p0</code> holds the object the method is called on (like Java's implicit "this" inside the call), and `;
+      html += paramTypeStrings.length ? `<code>${registers.slice(1).join(', ')}</code> hold the ${paramTypeStrings.length} argument(s) in order.` : 'there are no other arguments.';
+    } else {
+      html += paramTypeStrings.length ? `each register holds one argument, in order — ${paramTypeStrings.length} argument(s) total.` : 'this method takes no arguments, so the register list is empty.';
+    }
+    html += '</div>';
+
+    html += `<div style="margin-bottom:10px;"><strong style="color:var(--text);">${escapeHtml(classDescriptor)}</strong> — the class descriptor. Smali always writes classes as <code>L</code> + slash-separated package path + <code>;</code>, instead of Java's dotted notation.</div>`;
+
+    html += `<div style="margin-bottom:10px;"><strong style="color:var(--text);">${escapeHtml(methodName)}</strong> — the method name, unchanged from Java.</div>`;
+
+    html += `<div style="margin-bottom:10px;"><strong style="color:var(--text);">(${escapeHtml(paramDescriptor)})</strong> — the parameter signature. Each parameter's type is converted to its descriptor and concatenated with no separators`;
+    if (paramTypeStrings.length) {
+      html += ':<ul style="margin:8px 0 0 18px; padding:0;">' + paramTypeStrings.map((t, i) => `<li><code>${escapeHtml(t)}</code> → <code>${escapeHtml(paramInfos[i].descriptor)}</code>${!paramInfos[i].resolved ? ' <span style="color:var(--danger);">(unrecognized — used as a literal class name; double-check this one)</span>' : ''}</li>`).join('') + '</ul>';
+    } else {
+      html += ' — empty here since there are no parameters.';
+    }
+    html += '</div>';
+
+    html += `<div><strong style="color:var(--text);">${escapeHtml(returnInfo.descriptor)}</strong> — the return type descriptor`;
+    html += returnInfo.descriptor === 'V' ? ' (void — nothing comes back, no move-result line needed).'
+      : `. Since this returns a value, add <code>${moveResultLine.trim()}</code> on the next line to capture it into register v0.`;
+    html += '</div>';
+
+    if (!returnInfo.resolved) {
+      html += `<div style="margin-top:10px; color:var(--danger); font-size:12.5px;">⚠ Return type "${escapeHtml(returnRaw)}" wasn't recognized as a primitive or common type — it was wrapped as a literal class name. If it's a custom class, that's correct as long as you typed the right package; if it's a typo, fix it above.</div>`;
+    }
+
+    explainBody.innerHTML = html;
+    explainCard.style.display = 'block';
+  }
+
+  document.getElementById('convertBtn').addEventListener('click', convert);
+
+  document.getElementById('exampleBtn').addEventListener('click', () => {
+    javaCallInput.value = 'TzPowerfulDialog.show(this);';
+    invokeTypeSel.value = 'static';
+    classNameInput.value = 'com.tanzirdev.util.TzPowerfulDialog';
+    classNameInput.dataset.userEdited = '1';
+    methodNameInput.value = 'show';
+    methodNameInput.dataset.userEdited = '1';
+    paramTypesInput.value = 'android.app.Activity';
+    returnTypeInput.value = 'void';
+    convert();
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    javaCallInput.value = '';
+    invokeTypeSel.value = 'static';
+    classNameInput.value = '';
+    delete classNameInput.dataset.userEdited;
+    methodNameInput.value = '';
+    delete methodNameInput.dataset.userEdited;
+    paramTypesInput.value = '';
+    returnTypeInput.value = 'void';
+    smaliOutput.textContent = 'Fill in the fields and hit Convert.';
+    smaliOutput.style.color = 'var(--muted)';
+    explainCard.style.display = 'none';
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(smaliOutput.textContent);
+      showToast('Copied to clipboard');
+    } catch (e) {
+      showToast('Could not copy — select manually');
+    }
+  });
+
+  // convert on Enter from any text input
+  [classNameInput, methodNameInput, paramTypesInput, returnTypeInput, javaCallInput].forEach(el => {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') convert(); });
+  });
+</script>
+</body>
+</html>

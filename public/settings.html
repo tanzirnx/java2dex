@@ -4,29 +4,37 @@
 <meta charset="UTF-8" />
 <script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Settings — java2dex</title>
+<title>Settings — JaKo Compile</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#0B1220" />
+<meta name="theme-color" content="#0D0A1C" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="java2dex" />
+<meta name="apple-mobile-web-app-title" content="JaKo Compile" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
+<div class="glass-bg" aria-hidden="true">
+  <div class="glass-blob copper"></div>
+  <div class="glass-blob teal"></div>
+  <div class="glass-blob pink"></div>
+</div>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <a href="/" class="brand"><span class="brand-chip"></span>JaKo Compile</a>
     <div class="nav-right">
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/smali">Smali</a>
+        <a href="/kotlin">Kotlin</a>
+        <a href="/method-converter">Method Conv.</a>
         <a href="/history">History</a>
         <a href="/about">About</a>
         <a href="/help">Help</a>
@@ -97,7 +105,7 @@
 
     <div class="settings-section card">
       <h3>App info</h3>
-      <div class="info-row"><span class="label">App ID</span><span class="value">com.tanzirdev.java2dex</span></div>
+      <div class="info-row"><span class="label">App ID</span><span class="value">com.tanzirdev.jakocompile</span></div>
       <div class="info-row"><span class="label">Display mode</span><span class="value" id="displayModeVal">browser tab</span></div>
       <div class="info-row"><span class="label">Service worker</span><span class="value" id="swStatusVal">checking…</span></div>
       <div class="info-row"><span class="label">Version</span><span class="value">1.0.0</span></div>
@@ -131,7 +139,7 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>JaKo Compile — javac + d8 + jadx, in the browser.</span>
     <span>Free to use. No account required.</span>
   </div>
 </footer>

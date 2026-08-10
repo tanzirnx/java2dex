@@ -1,18 +1,33 @@
 {
-  "id": "com.tanzirdev.java2dex",
-  "name": "java2dex — Java to DEX Converter",
-  "short_name": "java2dex",
-  "description": "Compile .java source with javac and convert to Dalvik .dex bytecode, decompile DEX/APK back to Java, right in your browser.",
+  "id": "com.tanzirdev.jakocompile",
+  "name": "JaKo Compile \u2014 Java & Kotlin to DEX/Smali",
+  "short_name": "JaKo Compile",
+  "description": "Compile Java & Kotlin source to DEX/Smali bytecode, decompile back, right in your browser.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0B1220",
-  "theme_color": "#0B1220",
+  "background_color": "#0D0A1C",
+  "theme_color": "#0D0A1C",
   "orientation": "any",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     {
@@ -20,35 +35,60 @@
       "short_name": "Convert",
       "description": "Upload or paste Java source to convert",
       "url": "/convert",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Decompile",
       "short_name": "Decompile",
       "description": "Turn a DEX/APK/JAR back into Java source",
       "url": "/decompile",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Smali",
       "short_name": "Smali",
       "description": "Java to Smali and Smali to DEX",
       "url": "/smali",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "History",
       "short_name": "History",
       "description": "View past conversions and decompiles",
       "url": "/history",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "description": "Notifications and app data",
       "url": "/settings",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "share_target": {
@@ -57,7 +97,14 @@
     "enctype": "multipart/form-data",
     "params": {
       "files": [
-        { "name": "javaFiles", "accept": [".java", "text/x-java-source", "text/plain"] }
+        {
+          "name": "javaFiles",
+          "accept": [
+            ".java",
+            "text/x-java-source",
+            "text/plain"
+          ]
+        }
       ]
     }
   }

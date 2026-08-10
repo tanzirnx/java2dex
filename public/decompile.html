@@ -4,29 +4,37 @@
 <meta charset="UTF-8" />
 <script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Decompile — java2dex</title>
+<title>Decompile — JaKo Compile</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#0B1220" />
+<meta name="theme-color" content="#0D0A1C" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="java2dex" />
+<meta name="apple-mobile-web-app-title" content="JaKo Compile" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
+<div class="glass-bg" aria-hidden="true">
+  <div class="glass-blob copper"></div>
+  <div class="glass-blob teal"></div>
+  <div class="glass-blob pink"></div>
+</div>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <a href="/" class="brand"><span class="brand-chip"></span>JaKo Compile</a>
     <div class="nav-right">
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/smali">Smali</a>
+        <a href="/kotlin">Kotlin</a>
+        <a href="/method-converter">Method Conv.</a>
         <a href="/history">History</a>
         <a href="/about">About</a>
         <a href="/help">Help</a>
@@ -58,7 +66,7 @@
   <section class="wrap" style="padding-top:40px;">
     <span class="eyebrow">Decompile</span>
     <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">DEX → Java</h1>
-    <p class="lede" style="margin-top:8px;">Upload a .dex, .apk, .jar, or .class file — jadx converts the bytecode back into readable Java source.</p>
+    <p class="lede" style="margin-top:8px;">Upload a .dex, .apk, .jar, or .class file — jadx converts the bytecode back into readable source. Works on apps written in Java <strong>or Kotlin</strong> — bytecode doesn't remember which, so jadx decompiles either into Java-style source (see note below).</p>
 
     <div class="grid-2" style="margin-top:32px; align-items:start;">
       <div class="card">
@@ -108,6 +116,7 @@
           <h3 style="margin-bottom:10px;">Good to know</h3>
           <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.9;">
             <li>Up to 60MB per file — enough for most single-DEX APKs.</li>
+            <li><strong>Kotlin apps decompile too</strong> — jadx doesn't know or care what the original language was. Output is always Java-style syntax though, not real <code>.kt</code> — no free/open tool reliably reconstructs idiomatic Kotlin from bytecode.</li>
             <li>Decompiled output is an approximation — variable names get regenerated, and heavily obfuscated code may come back partial.</li>
             <li>Only decompile code you have the right to inspect.</li>
             <li>Runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser, same as conversions.</li>
@@ -120,7 +129,7 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>JaKo Compile — javac + d8 + jadx, in the browser.</span>
     <span>Free to use. No account required.</span>
   </div>
 </footer>

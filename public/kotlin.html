@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Convert — JaKo Compile</title>
+<title>Kotlin — JaKo Compile</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#0D0A1C" />
@@ -65,8 +65,8 @@
 <main class="page-main">
   <section class="wrap" style="padding-top:40px;">
     <span class="eyebrow">Convert</span>
-    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Compile and dex your source</h1>
-    <p class="lede" style="margin-top:8px;">Upload files, paste code, or both. Everything in the queue is compiled together in one pass.</p>
+    <h1 style="font-size:clamp(26px,4vw,36px); margin-top:10px;">Compile and dex your Kotlin source</h1>
+    <p class="lede" style="margin-top:8px;">Upload .kt files, paste code, or both. Compiles with kotlinc, then d8 (and optionally baksmali).</p>
 
     <div class="grid-2" style="margin-top:32px; align-items:start;">
       <div class="card">
@@ -80,26 +80,25 @@
             <div class="dz-icon">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-            <p>Click to choose .java files<br/>or drag &amp; drop them here</p>
-            <p style="margin-top:8px; font-size:11.5px;">.java files, or a .zip of a project</p>
+            <p>Click to choose .kt files<br/>or drag &amp; drop them here</p>
+            <p style="margin-top:8px; font-size:11.5px;">.kt files, or a .zip of a project</p>
           </div>
-          <input type="file" id="fileInput" accept=".java,.zip" multiple />
+          <input type="file" id="fileInput" accept=".kt,.zip" multiple />
         </div>
 
         <div class="panel" id="panel-paste">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-            <label class="field-label" style="margin:0;">Filename (auto-detected from your public class)</label>
+            <label class="field-label" style="margin:0;">Filename</label>
             <select id="templatePicker" style="background:var(--ink-2); color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12.5px; font-family:var(--font-mono);">
               <option value="">+ Insert template…</option>
               <option value="activity">Android Activity</option>
               <option value="dialog">Custom Dialog</option>
-              <option value="fragment">Fragment</option>
-              <option value="pojo">Plain class (POJO)</option>
-              <option value="adapter">RecyclerView Adapter</option>
+              <option value="data">Data class</option>
+              <option value="main">Top-level fun main()</option>
             </select>
           </div>
-          <input type="text" id="pasteFilename" placeholder="MyClass.java" />
-          <textarea id="pasteCode" placeholder="Paste your Java code here, any length..." spellcheck="false"></textarea>
+          <input type="text" id="pasteFilename" placeholder="MyClass.kt" />
+          <textarea id="pasteCode" placeholder="Paste your Kotlin code here, any length..." spellcheck="false"></textarea>
           <div class="paste-actions">
             <span class="charcount" id="charcount">0 characters</span>
             <span id="syntaxStatus" style="font-size:11.5px; font-family:var(--font-mono);"></span>
@@ -107,18 +106,8 @@
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px; margin-top:16px; padding:10px 12px; background:var(--ink-2); border:1px solid var(--line); border-radius:9px;">
-          <span style="font-size:12.5px; color:var(--muted); font-family:var(--font-mono);">Compile mode:</span>
-          <label style="display:flex; align-items:center; gap:5px; font-size:12.5px; cursor:pointer;">
-            <input type="radio" name="compileMode" value="together" id="modeTogether" checked /> Together
-          </label>
-          <label style="display:flex; align-items:center; gap:5px; font-size:12.5px; cursor:pointer;">
-            <input type="radio" name="compileMode" value="separate" id="modeSeparate" /> Separately
-          </label>
-        </div>
-
-        <details style="margin-top:12px;">
-          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted); font-family:var(--font-mono);">⚙ Advanced (multidex)</summary>
+        <details style="margin-top:16px;">
+          <summary style="cursor:pointer; font-size:12.5px; color:var(--muted); font-family:var(--font-mono);">⚙ Advanced (multidex, DEX output only)</summary>
           <div style="margin-top:10px; display:grid; gap:10px;">
             <div>
               <label class="field-label">Force these classes into the primary dex (comma or newline separated)</label>
@@ -137,7 +126,10 @@
         </div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="convertBtn" disabled style="margin-top:20px;">Convert to DEX <span style="opacity:0.7; font-weight:400; font-size:12px;">(Ctrl+Enter)</span></button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="btn btn-primary" id="toDexBtn" disabled style="flex:1;">→ DEX <span style="opacity:0.7; font-weight:400; font-size:12px;">(Ctrl+Enter)</span></button>
+          <button class="btn btn-ghost" id="toSmaliBtn" disabled style="flex:1;">→ Smali</button>
+        </div>
         <div id="progressWrap" style="display:none; margin-top:14px;">
           <div style="height:6px; background:var(--ink-2); border-radius:4px; overflow:hidden; border:1px solid var(--line);">
             <div id="progressBar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--copper), var(--teal)); transition:width 0.15s;"></div>
@@ -149,8 +141,15 @@
           <button class="btn btn-ghost btn-sm" id="copyErrorBtn">📋 Copy all errors</button>
         </div>
         <div id="inspectorCard" class="card" style="display:none; margin-top:16px; background:var(--ink-2);">
-          <h3 style="margin-bottom:12px; font-size:13.5px; color:var(--teal);">Dex Inspector</h3>
+          <h3 style="margin-bottom:12px; font-size:13.5px; color:var(--teal);">Output</h3>
           <div id="inspectorBody" style="font-size:12.5px; font-family:var(--font-mono); color:var(--muted); line-height:1.8;"></div>
+        </div>
+        <div class="card" id="previewCard" style="display:none; margin-top:16px; padding:0; overflow:hidden;">
+          <div style="padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="font-size:13px; margin:0;">Smali preview</h3>
+            <button class="btn btn-ghost btn-sm" id="copyPreviewBtn">📋 Copy</button>
+          </div>
+          <pre id="previewBody" style="margin:14px; padding:16px; background:var(--ink-2); border-radius:10px; font-family:var(--font-mono); font-size:11.5px; line-height:1.7; color:var(--text); max-height:360px; overflow:auto; white-space:pre-wrap;"></pre>
         </div>
       </div>
 
@@ -160,9 +159,9 @@
           <div class="pipeline" style="flex-direction:column; align-items:stretch;">
             <div class="stage" id="stage-source"><span class="stage-label">Source</span><p class="stage-desc" id="stage-source-desc">Waiting for files…</p></div>
             <div class="stage-arrow" style="height:20px;"></div>
-            <div class="stage" id="stage-compile"><span class="stage-label">Compile</span><p class="stage-desc" id="stage-compile-desc">javac</p></div>
+            <div class="stage" id="stage-compile"><span class="stage-label">Compile</span><p class="stage-desc" id="stage-compile-desc">kotlinc</p></div>
             <div class="stage-arrow" style="height:20px;"></div>
-            <div class="stage" id="stage-dex"><span class="stage-label">Dex</span><p class="stage-desc" id="stage-dex-desc">d8</p></div>
+            <div class="stage" id="stage-dex"><span class="stage-label">Dex / Smali</span><p class="stage-desc" id="stage-dex-desc">d8 (+ baksmali)</p></div>
           </div>
         </div>
         <div class="card">
@@ -170,6 +169,7 @@
           <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.9;">
             <li>Up to 20MB per file, 50 files per run — or upload a .zip and it's auto-extracted.</li>
             <li>Android SDK classes (android.app.*, android.widget.*, etc.) compile out of the box.</li>
+            <li>Kotlin stdlib functions compile and dex fine, but the stdlib itself must be bundled in your final APK to run — see <a href="/help" style="color:var(--copper);">Help</a>.</li>
             <li>Files are deleted from the server right after your download starts.</li>
             <li>Successful and failed runs are saved to <a href="/history" style="color:var(--copper);">History</a> in your browser.</li>
             <li><kbd style="font-family:var(--font-mono); background:var(--panel); padding:1px 5px; border-radius:4px; border:1px solid var(--line);">Ctrl+Enter</kbd> to convert, <kbd style="font-family:var(--font-mono); background:var(--panel); padding:1px 5px; border-radius:4px; border:1px solid var(--line);">Esc</kbd> to clear the queue.</li>
@@ -182,7 +182,7 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <span>JaKo Compile — javac + d8, in the browser.</span>
+    <span>JaKo Compile — kotlinc + d8 + baksmali, in the browser.</span>
     <span>Free to use. No account required.</span>
   </div>
 </footer>
@@ -206,7 +206,8 @@
 
   const fileListEl = document.getElementById('fileList');
   const filelistWrap = document.getElementById('filelistWrap');
-  const convertBtn = document.getElementById('convertBtn');
+  const toDexBtn = document.getElementById('toDexBtn');
+  const toSmaliBtn = document.getElementById('toSmaliBtn');
   const statusEl = document.getElementById('status');
   const stageSourceDesc = document.getElementById('stage-source-desc');
 
@@ -254,7 +255,8 @@
 
       fileListEl.appendChild(div);
     });
-    convertBtn.disabled = selectedFiles.length === 0;
+    toDexBtn.disabled = selectedFiles.length === 0;
+    toSmaliBtn.disabled = selectedFiles.length === 0;
   }
 
   // ---- upload mode ----
@@ -275,7 +277,7 @@
     let added = 0;
     for (const f of fileListObj) {
       const lower = f.name.toLowerCase();
-      if (lower.endsWith('.java')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
+      if (lower.endsWith('.kt')) { selectedFiles.push({ name: f.name, source: f, type: 'file' }); added++; }
       else if (lower.endsWith('.zip')) { selectedFiles.push({ name: f.name, source: f, type: 'zip' }); added++; }
     }
     renderFileList();
@@ -293,7 +295,7 @@
     charcount.textContent = pasteCode.value.length.toLocaleString() + ' characters';
     if (!pasteFilename.dataset.userEdited) {
       const name = detectClassName(pasteCode.value);
-      pasteFilename.value = name ? name + '.java' : '';
+      pasteFilename.value = name ? name + '.kt' : '';
     }
     updateSyntaxStatus();
   });
@@ -355,20 +357,19 @@
   }
 
   function detectClassName(code) {
-    let m = code.match(/\bpublic\s+(?:final\s+|abstract\s+|strictfp\s+|sealed\s+|non-sealed\s+)*(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    let m = code.match(/\bclass\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
     if (m) return m[1];
-    m = code.match(/\b(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+    m = code.match(/\bobject\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
     if (m) return m[1];
     return null;
   }
 
-  // ---- code templates ----
+  // ---- code templates (Kotlin) ----
   const CODE_TEMPLATES = {
-    activity: `import android.app.Activity;\nimport android.os.Bundle;\nimport android.widget.TextView;\n\npublic class MyActivity extends Activity {\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        TextView tv = new TextView(this);\n        tv.setText("Hello from MyActivity");\n        setContentView(tv);\n    }\n}\n`,
-    dialog: `import android.app.Activity;\nimport android.app.AlertDialog;\nimport android.widget.TextView;\n\npublic class MyDialog {\n    public static void show(Activity activity, String title, String message) {\n        TextView view = new TextView(activity);\n        view.setPadding(40, 30, 40, 30);\n        view.setText(message);\n        new AlertDialog.Builder(activity)\n                .setTitle(title)\n                .setView(view)\n                .setPositiveButton("OK", null)\n                .show();\n    }\n}\n`,
-    fragment: `import android.app.Fragment;\nimport android.os.Bundle;\nimport android.view.LayoutInflater;\nimport android.view.View;\nimport android.view.ViewGroup;\nimport android.widget.TextView;\n\npublic class MyFragment extends Fragment {\n    @Override\n    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {\n        TextView tv = new TextView(getActivity());\n        tv.setText("Hello from MyFragment");\n        return tv;\n    }\n}\n`,
-    pojo: `public class Person {\n    private String name;\n    private int age;\n\n    public Person(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n\n    public String getName() { return name; }\n    public int getAge() { return age; }\n\n    @Override\n    public String toString() {\n        return name + " (" + age + ")";\n    }\n}\n`,
-    adapter: `import android.view.LayoutInflater;\nimport android.view.View;\nimport android.view.ViewGroup;\nimport android.widget.TextView;\nimport android.widget.BaseAdapter;\nimport java.util.List;\n\npublic class MyAdapter extends BaseAdapter {\n    private final List<String> items;\n\n    public MyAdapter(List<String> items) { this.items = items; }\n\n    @Override public int getCount() { return items.size(); }\n    @Override public Object getItem(int position) { return items.get(position); }\n    @Override public long getItemId(int position) { return position; }\n\n    @Override\n    public View getView(int position, View convertView, ViewGroup parent) {\n        TextView tv = convertView != null ? (TextView) convertView : new TextView(parent.getContext());\n        tv.setText(items.get(position));\n        tv.setPadding(24, 24, 24, 24);\n        return tv;\n    }\n}\n`,
+    activity: `import android.app.Activity\nimport android.os.Bundle\nimport android.widget.TextView\n\nclass MyActivity : Activity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        val tv = TextView(this)\n        tv.text = "Hello from MyActivity"\n        setContentView(tv)\n    }\n}\n`,
+    dialog: `import android.app.Activity\nimport android.app.AlertDialog\nimport android.widget.TextView\n\nobject MyDialog {\n    fun show(activity: Activity, title: String, message: String) {\n        val view = TextView(activity)\n        view.setPadding(40, 30, 40, 30)\n        view.text = message\n        AlertDialog.Builder(activity)\n            .setTitle(title)\n            .setView(view)\n            .setPositiveButton("OK", null)\n            .show()\n    }\n}\n`,
+    data: `data class Person(val name: String, val age: Int) {\n    override fun toString(): String = "$name ($age)"\n}\n`,
+    main: `fun greet(name: String): String {\n    return "Hello, $name! Sum=" + (2 + 3)\n}\n\nfun main() {\n    println(greet("Tanzir"))\n}\n`,
   };
 
   const templatePicker = document.getElementById('templatePicker');
@@ -384,10 +385,10 @@
 
   addPasteBtn.addEventListener('click', () => {
     const code = pasteCode.value;
-    if (!code.trim()) { showStatus('Paste some Java code first.', 'error'); return; }
+    if (!code.trim()) { showStatus('Paste some Kotlin code first.', 'error'); return; }
     let filename = pasteFilename.value.trim();
-    if (!filename) filename = 'Pasted' + Date.now() + '.java';
-    if (!filename.endsWith('.java')) filename += '.java';
+    if (!filename) filename = 'Pasted' + Date.now() + '.kt';
+    if (!filename.endsWith('.kt')) filename += '.kt';
 
     const blob = new Blob([code], { type: 'text/plain' });
     const file = new File([blob], filename, { type: 'text/plain' });
@@ -424,6 +425,8 @@
   const copyErrorBtn = document.getElementById('copyErrorBtn');
   const inspectorCard = document.getElementById('inspectorCard');
   const inspectorBody = document.getElementById('inspectorBody');
+  const previewCard = document.getElementById('previewCard');
+  const previewBody = document.getElementById('previewBody');
 
   function renderErrorDetail(errJson) {
     errorActions.style.display = 'none';
@@ -509,11 +512,14 @@
     });
   }
 
-  async function convertTogether() {
+  async function runCompile(target) {
     if (selectedFiles.length === 0) return;
-    convertBtn.disabled = true;
+    const btn = target === 'dex' ? toDexBtn : toSmaliBtn;
+    const otherBtn = target === 'dex' ? toSmaliBtn : toDexBtn;
+    btn.disabled = true; otherBtn.disabled = true;
     resetStages();
     inspectorCard.style.display = 'none';
+    previewCard.style.display = 'none';
     errorActions.style.display = 'none';
     setStage('stage-source', 'done');
     setStage('stage-compile', 'active');
@@ -523,42 +529,38 @@
     progressLabel.textContent = 'Uploading… 0%';
 
     j2dEnsureNotifyPermission();
-    j2dNotify('java2dex', 'Converting your file(s)…', null);
+    j2dNotify('JaKo Compile', target === 'dex' ? 'Compiling Kotlin to DEX…' : 'Compiling Kotlin to Smali…', null);
 
+    const url = target === 'dex' ? '/kotlin-to-dex' : '/kotlin-to-smali';
     const formData = new FormData();
-    selectedFiles.forEach(entry => formData.append('javaFiles', entry.source, entry.name));
-    const mainDexClasses = document.getElementById('mainDexClassesInput').value.trim();
-    const minApi = document.getElementById('minApiInput').value.trim();
-    if (mainDexClasses) formData.append('mainDexClasses', mainDexClasses);
-    if (minApi) formData.append('minApi', minApi);
+    selectedFiles.forEach(entry => formData.append('kotlinFiles', entry.source, entry.name));
+    if (target === 'dex') {
+      const mainDexClasses = document.getElementById('mainDexClassesInput').value.trim();
+      const minApi = document.getElementById('minApiInput').value.trim();
+      if (mainDexClasses) formData.append('mainDexClasses', mainDexClasses);
+      if (minApi) formData.append('minApi', minApi);
+    }
     const inputFilesMeta = selectedFiles.map(e => ({ name: e.name, size: e.source.size, kind: e.type }));
+    const kind = target === 'dex' ? 'kotlin-to-dex' : 'kotlin-to-smali';
 
     try {
-      const xhr = await xhrUpload('/convert', formData, (pct) => {
+      const xhr = await xhrUpload(url, formData, (pct) => {
         progressBar.style.width = pct + '%';
-        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Compiling & converting…';
-        if (pct >= 100) showStatus('Compiling & converting...', 'info');
+        progressLabel.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Compiling…';
+        if (pct >= 100) showStatus('Compiling…', 'info');
       });
       progressWrap.style.display = 'none';
 
       if (xhr.status < 200 || xhr.status >= 300) {
         const text = await xhr.response.text();
         let errJson = {};
-        try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Conversion failed', details: text }; }
-
+        try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Compilation failed', details: text }; }
         renderErrorDetail(errJson);
         setStage('stage-compile', 'idle');
         setStage('stage-dex', 'idle');
-
-        j2dNotify('java2dex — failed', errJson.error || 'Conversion failed', null);
-
-        J2DHistory.add({
-          inputFiles: inputFilesMeta,
-          status: 'error',
-          errorMessage: (errJson.error || 'Conversion failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : ''),
-        });
-
-        convertBtn.disabled = false;
+        j2dNotify('JaKo Compile — failed', errJson.error || 'Compilation failed', null);
+        J2DHistory.add({ kind, inputFiles: inputFilesMeta, status: 'error', errorMessage: (errJson.error || 'Failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 400) : '') });
+        btn.disabled = false; otherBtn.disabled = false;
         return;
       }
 
@@ -568,157 +570,68 @@
       const blob = xhr.response;
       const disposition = xhr.getResponseHeader('Content-Disposition') || '';
       const match = disposition.match(/filename="(.+)"/);
-      const filename = match ? match[1] : 'classes.dex';
+      const filename = match ? match[1] : (target === 'dex' ? 'classes.dex' : 'smali-output.zip');
 
       setStage('stage-dex', 'done');
-      renderInspector({ get: (h) => xhr.getResponseHeader(h) }, blob);
 
-      const url = URL.createObjectURL(blob);
+      if (target === 'dex') {
+        renderInspector({ get: (h) => xhr.getResponseHeader(h) }, blob);
+      } else {
+        const smaliCount = xhr.getResponseHeader('X-Smali-File-Count');
+        const methodCount = xhr.getResponseHeader('X-Method-Count');
+        const fieldCount = xhr.getResponseHeader('X-Field-Count');
+        const previewRaw = xhr.getResponseHeader('X-Smali-Preview');
+        inspectorBody.innerHTML = `
+          <div>Smali files: <strong style="color:var(--text);">${smaliCount || '—'}</strong></div>
+          <div>Methods: <strong style="color:var(--text);">${methodCount || '—'}</strong> <span style="color:var(--muted-2);">/ 65536 per dex</span></div>
+          <div>Fields: <strong style="color:var(--text);">${fieldCount || '—'}</strong> <span style="color:var(--muted-2);">/ 65536 per dex</span></div>`;
+        inspectorCard.style.display = 'block';
+        if (previewRaw) {
+          previewBody.textContent = decodeURIComponent(previewRaw);
+          previewCard.style.display = 'block';
+        }
+      }
+
+      const url2 = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      a.href = url2; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url2);
 
       showStatus(`Done — downloaded ${filename}`, 'success');
-      j2dNotify('java2dex — done ✓', `Downloaded ${filename}`, 'Saved to History');
+      j2dNotify('JaKo Compile — done ✓', `Downloaded ${filename}`, 'Saved to History');
 
-      const historyEntry = {
-        inputFiles: inputFilesMeta,
-        status: 'success',
-        outputName: filename,
-        outputSizeBytes: blob.size,
-      };
+      const historyEntry = { kind, inputFiles: inputFilesMeta, status: 'success', outputName: filename, outputSizeBytes: blob.size };
       if (blob.size <= J2DHistory.maxStoredOutputBytes) {
-        try { historyEntry.outputBase64 = await blobToBase64(blob); } catch (e) { /* skip storing blob */ }
+        try { historyEntry.outputBase64 = await blobToBase64(blob); } catch (e) {}
       }
       J2DHistory.add(historyEntry);
-
     } catch (err) {
       progressWrap.style.display = 'none';
       showStatus('Network error: ' + err.message, 'error');
       lastErrorText = 'Network error: ' + err.message;
       errorActions.style.display = 'block';
       resetStages();
-      j2dNotify('java2dex — error', 'Network error during conversion', null);
-      J2DHistory.add({ inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
+      j2dNotify('JaKo Compile — error', 'Network error', null);
+      J2DHistory.add({ kind, inputFiles: inputFilesMeta, status: 'error', errorMessage: 'Network error: ' + err.message });
     } finally {
-      convertBtn.disabled = false;
+      btn.disabled = false; otherBtn.disabled = false;
     }
   }
 
-  // ---- batch mode: each queue entry compiled independently ----
-  async function convertSeparate() {
-    if (selectedFiles.length === 0) return;
-    convertBtn.disabled = true;
-    resetStages();
-    inspectorCard.style.display = 'none';
-    errorActions.style.display = 'none';
-    setStage('stage-source', 'done');
-    setStage('stage-compile', 'active');
-    progressWrap.style.display = 'block';
+  toDexBtn.addEventListener('click', () => runCompile('dex'));
+  toSmaliBtn.addEventListener('click', () => runCompile('smali'));
 
-    j2dEnsureNotifyPermission();
-    j2dNotify('java2dex', `Converting ${selectedFiles.length} files separately…`, null);
-
-    const results = [];
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const entry = selectedFiles[i];
-      const pct = Math.round((i / selectedFiles.length) * 100);
-      progressBar.style.width = pct + '%';
-      progressLabel.textContent = `Compiling ${i + 1} of ${selectedFiles.length}: ${entry.name}`;
-      showStatus(`Compiling ${i + 1} of ${selectedFiles.length}: ${entry.name}`, 'info');
-
-      const formData = new FormData();
-      formData.append('javaFiles', entry.source, entry.name);
-
-      try {
-        const xhr = await xhrUpload('/convert', formData, () => {});
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const blob = xhr.response;
-          const disposition = xhr.getResponseHeader('Content-Disposition') || '';
-          const match = disposition.match(/filename="(.+)"/);
-          const outName = (match ? match[1] : 'classes.dex').replace('classes', entry.name.replace(/\.(java|zip)$/i, '') + '-classes');
-          results.push({ name: entry.name, status: 'success', outName, blob });
-          J2DHistory.add({
-            inputFiles: [{ name: entry.name, size: entry.source.size, kind: entry.type }],
-            status: 'success', outputName: outName, outputSizeBytes: blob.size,
-          });
-        } else {
-          const text = await xhr.response.text();
-          let errJson = {};
-          try { errJson = JSON.parse(text); } catch (e) { errJson = { error: 'Conversion failed' }; }
-          results.push({ name: entry.name, status: 'error', error: errJson.error || 'Conversion failed', details: errJson.details });
-          J2DHistory.add({
-            inputFiles: [{ name: entry.name, size: entry.source.size, kind: entry.type }],
-            status: 'error', errorMessage: (errJson.error || 'Conversion failed') + (errJson.details ? ' — ' + String(errJson.details).slice(0, 300) : ''),
-          });
-        }
-      } catch (err) {
-        results.push({ name: entry.name, status: 'error', error: 'Network error: ' + err.message });
-      }
-    }
-
-    progressWrap.style.display = 'none';
-    setStage('stage-compile', 'done');
-    setStage('stage-dex', 'done');
-
-    const successCount = results.filter(r => r.status === 'success').length;
-    j2dNotify('java2dex — batch done', `${successCount}/${results.length} succeeded`, null);
-    renderBatchResults(results);
-    convertBtn.disabled = false;
-  }
-
-  function renderBatchResults(results) {
-    let html = `<strong style="color:var(--text);">Batch results — ${results.filter(r => r.status === 'success').length}/${results.length} succeeded</strong>`;
-    html += '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">';
-    results.forEach((r, idx) => {
-      if (r.status === 'success') {
-        html += `<div class="fileitem" style="margin:0;"><span class="badge badge-success">done</span><span class="name">${escapeHtmlLocal(r.name)}</span><button class="btn btn-ghost btn-sm" data-download-idx="${idx}">Download</button></div>`;
-      } else {
-        html += `<div class="fileitem" style="margin:0; border-color:rgba(242,85,90,0.3);"><span class="badge badge-error">failed</span><span class="name">${escapeHtmlLocal(r.name)}</span><span style="font-size:11.5px; color:var(--danger);">${escapeHtmlLocal(r.error || '')}</span></div>`;
-      }
-    });
-    html += '</div>';
-    statusEl.innerHTML = html;
-    statusEl.className = 'status show info';
-
-    statusEl.querySelectorAll('[data-download-idx]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const r = results[parseInt(btn.dataset.downloadIdx, 10)];
-        const url = URL.createObjectURL(r.blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = r.outName;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-      });
-    });
-
-    const failedWithDetails = results.filter(r => r.status === 'error' && r.details);
-    if (failedWithDetails.length) {
-      lastErrorText = failedWithDetails.map(r => `--- ${r.name} ---\n${r.error}\n${r.details}`).join('\n\n');
-      errorActions.style.display = 'block';
-    }
-  }
-
-  function runConvert() {
-    const mode = document.querySelector('input[name="compileMode"]:checked').value;
-    if (mode === 'separate' && selectedFiles.length > 1) {
-      convertSeparate();
-    } else {
-      convertTogether();
-    }
-  }
-
-  convertBtn.addEventListener('click', runConvert);
+  document.getElementById('copyPreviewBtn').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(previewBody.textContent); showToast('Preview copied to clipboard'); }
+    catch (e) { showToast('Could not copy — select manually'); }
+  });
 
   // ---- keyboard shortcuts ----
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (!convertBtn.disabled) runConvert();
+      if (!toDexBtn.disabled) runCompile('dex');
     } else if (e.key === 'Escape') {
       const active = document.activeElement;
       const isTyping = active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT');
@@ -729,35 +642,6 @@
       }
     }
   });
-
-  // ---- import files shared in from the OS "Share to java2dex" action ----
-  (function importSharedFiles() {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('shared');
-    const sharedError = params.get('sharedError');
-
-    if (sharedError) {
-      showToast('Nothing usable was shared — only .java files are accepted.');
-      history.replaceState({}, '', '/convert');
-      return;
-    }
-    if (!token) return;
-
-    fetch('/api/shared/' + encodeURIComponent(token))
-      .then(res => { if (!res.ok) throw new Error('expired'); return res.json(); })
-      .then(data => {
-        const files = data.files || [];
-        files.forEach(f => {
-          const blob = new Blob([f.content], { type: 'text/plain' });
-          const file = new File([blob], f.name, { type: 'text/plain' });
-          selectedFiles.push({ name: f.name, source: file, type: 'file' });
-        });
-        renderFileList();
-        if (files.length) showToast(files.length + ' shared file(s) added to queue');
-      })
-      .catch(() => showToast('That shared link already expired — try sharing again.'))
-      .finally(() => history.replaceState({}, '', '/convert'));
-  })();
 </script>
 </body>
 </html>

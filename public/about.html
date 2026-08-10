@@ -4,29 +4,37 @@
 <meta charset="UTF-8" />
 <script>(function(){try{var t=localStorage.getItem('java2dex_theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>About — java2dex</title>
+<title>About — JaKo Compile</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1220'/%3E%3Crect x='10' y='10' width='12' height='12' rx='2' fill='none' stroke='%23E8963B' stroke-width='2'/%3E%3Cpath d='M13 6v4M19 6v4M13 22v4M19 22v4M6 13h4M6 19h4M22 13h4M22 19h4' stroke='%23E8963B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#0B1220" />
+<meta name="theme-color" content="#0D0A1C" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="java2dex" />
+<meta name="apple-mobile-web-app-title" content="JaKo Compile" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
+<div class="glass-bg" aria-hidden="true">
+  <div class="glass-blob copper"></div>
+  <div class="glass-blob teal"></div>
+  <div class="glass-blob pink"></div>
+</div>
+
 <nav class="site-nav">
   <div class="nav-inner">
-    <a href="/" class="brand"><span class="brand-chip"></span>java2dex</a>
+    <a href="/" class="brand"><span class="brand-chip"></span>JaKo Compile</a>
     <div class="nav-right">
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/convert">Convert</a>
         <a href="/decompile">Decompile</a>
         <a href="/smali">Smali</a>
+        <a href="/kotlin">Kotlin</a>
+        <a href="/method-converter">Method Conv.</a>
         <a href="/history">History</a>
         <a href="/about">About</a>
         <a href="/help">Help</a>
@@ -63,18 +71,50 @@
     <div class="card" style="margin-top:28px;">
       <h3 style="margin-bottom:12px;">What it does</h3>
       <div class="loglist">
-        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Convert</strong><span>.java source → compiled .dex bytecode, via javac then d8. Upload files, a .zip project, or paste code directly.</span></div></div>
-        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Decompile</strong><span>.dex / .apk / .jar / .class → readable .java source, via jadx.</span></div></div>
-        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Smali</strong><span>.java → disassembled Smali (baksmali), and Smali → .dex (smali assembler) — a round trip for editing raw bytecode.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Convert</strong><span>.java or .kt source → compiled .dex bytecode, via javac/kotlinc then d8. Upload files, a .zip project, or paste code directly.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Decompile</strong><span>.dex / .apk / .jar / .class → readable source, via jadx — works on apps written in Java or Kotlin.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Smali</strong><span>Java/Kotlin → disassembled Smali (baksmali), and Smali → .dex (smali assembler) — a round trip for editing raw bytecode.</span></div></div>
+        <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Method Converter</strong><span>Turn a single Java method call into its exact Smali invoke-* instruction, with a plain-English breakdown.</span></div></div>
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>History</strong><span>Every run is logged locally in your browser — never on a server database.</span></div></div>
         <div class="logline"><span class="prompt">&gt;</span><div class="logtext"><strong>Installable</strong><span>Works as a PWA — installable on desktop and Android, with offline shell caching and Android share-target support.</span></div></div>
       </div>
     </div>
 
     <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:14px;">Full feature list</h3>
+      <div class="grid-2">
+        <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:2;">
+          <li>Java → DEX (javac + d8)</li>
+          <li>Kotlin → DEX (kotlinc + d8)</li>
+          <li>Java → Smali disassembly</li>
+          <li>Kotlin → Smali disassembly</li>
+          <li>Smali → DEX assembly (round-trip editing)</li>
+          <li>DEX/APK/JAR/CLASS → Java decompile (jadx)</li>
+          <li>Standalone Method Converter tool</li>
+          <li>.zip project upload (auto-extracted)</li>
+          <li>Paste-code mode alongside file upload</li>
+          <li>Drag-and-drop + drag-to-reorder queue</li>
+        </ul>
+        <ul style="margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:2;">
+          <li>Manual multidex control (main-dex-list, min-api)</li>
+          <li>AndroidX / Material classpath support</li>
+          <li>Live client-side syntax balance checker</li>
+          <li>Structured, one-click-copy compiler errors</li>
+          <li>Dex Inspector (class/method/field counts)</li>
+          <li>Local History with JSON export/import</li>
+          <li>Installable PWA + offline app shell</li>
+          <li>Android Share Target (share .java in directly)</li>
+          <li>Push notifications + local run alerts</li>
+          <li>Install QR code, dark/light theme, keyboard shortcuts</li>
+        </ul>
+      </div>
+      <p class="muted" style="font-size:12.5px; margin-top:14px;">Plus a public, key-free REST API (<a href="/api-docs" style="color:var(--copper);">docs</a>) and a ready-to-build Android APK wrapper project (see the repo's <code>android-twa-app/</code> folder).</p>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
       <h3 style="margin-bottom:12px;">Built with</h3>
       <div class="info-row"><span class="label">Backend</span><span class="value">Node.js, Express</span></div>
-      <div class="info-row"><span class="label">Compiler</span><span class="value">javac (OpenJDK)</span></div>
+      <div class="info-row"><span class="label">Compiler</span><span class="value">javac (OpenJDK) + kotlinc</span></div>
       <div class="info-row"><span class="label">Dexer</span><span class="value">d8 (Android build-tools)</span></div>
       <div class="info-row"><span class="label">Decompiler</span><span class="value">jadx</span></div>
       <div class="info-row"><span class="label">Smali</span><span class="value">baksmali / smali</span></div>
@@ -92,30 +132,36 @@
         </div>
         <button class="btn btn-ghost btn-sm" id="copyPromptBtn" style="flex-shrink:0;">📋 Copy prompt</button>
       </div>
-      <pre id="appPrompt" style="margin-top:14px; padding:16px; background:var(--ink-2); border:1px solid var(--line); border-radius:10px; font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--muted); white-space:pre-wrap; max-height:400px; overflow-y:auto;">java2dex is a free web app (also installable as a PWA) at this URL that converts between Java source and Android DEX bytecode. It has these pages:
+      <pre id="appPrompt" style="margin-top:14px; padding:16px; background:var(--ink-2); border:1px solid var(--line); border-radius:10px; font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--muted); white-space:pre-wrap; max-height:400px; overflow-y:auto;">JaKo Compile is a free web app (also installable as a PWA) at this URL that converts between Java/Kotlin source and Android DEX/Smali bytecode. It has these pages:
 
-- /convert — Upload one or more .java files (drag-and-drop or file picker), upload a .zip of a Java project (auto-extracted), or paste code directly into a textarea. Multiple files can be queued and compiled together in one pass. Clicking "Convert to DEX" sends them to POST /convert as multipart/form-data (field name "javaFiles"), where the server runs javac (with android.jar on the classpath, so android.* APIs work) then d8, and returns classes.dex (or a zip of multiple dex files for multidex output) as a file download.
+- /convert — Upload one or more .java files (drag-and-drop or file picker), upload a .zip of a Java project (auto-extracted), or paste code directly into a textarea. Multiple files can be queued and compiled together in one pass. Clicking "Convert to DEX" sends them to POST /convert as multipart/form-data (field name "javaFiles"), where the server runs javac (with android.jar and AndroidX jars on the classpath, so android.* and some androidx.* APIs work) then d8, and returns classes.dex (or a zip of multiple dex files for multidex output). Supports optional manual multidex control (mainDexClasses, minApi fields).
 
-- /decompile — Upload a .dex, .apk, .jar, .class, .aar, or .zip file. Sent to POST /decompile (field name "inputFiles"), the server runs jadx and returns a .zip of decompiled .java source files.
+- /kotlin — Same idea as /convert but for .kt source (field "kotlinFiles"), with two separate actions: POST /kotlin-to-dex (kotlinc then d8) and POST /kotlin-to-smali (kotlinc, d8, then baksmali).
+
+- /decompile — Upload a .dex, .apk, .jar, .class, .aar, or .zip file. Sent to POST /decompile (field name "inputFiles"), the server runs jadx and returns a .zip of decompiled .java-style source files — works regardless of whether the original app was written in Java or Kotlin, since bytecode doesn't preserve that distinction.
 
 - /smali — Two modes. "Java → Smali": upload/paste .java (or a .zip) like /convert, but the server also runs baksmali on the resulting dex to produce readable Smali source (POST /java-to-smali, field "javaFiles", returns a .zip of .smali files, with method/field counts in response headers). "Smali → DEX": upload .smali files (or a .zip of them) and the server reassembles them into a classes.dex (POST /smali-to-dex, field "smaliFiles").
 
-- /history — Shows every past convert/decompile/smali run, stored only in the browser's localStorage (metadata always, plus the output file itself if under ~350KB for re-download). Supports export/import as JSON, delete individual entries, and clear all.
+- /method-converter — A standalone, fully client-side tool (no server calls). Takes a Java method call plus class name, method name, parameter types, and return type, and generates the exact Smali invoke-static/virtual/direct/interface instruction, with correct register list and type descriptors, plus a plain-English breakdown of each part.
 
-- /settings — Toggle push notifications (Web Push API) and local per-action alerts, view app/install info, clear local history or offline cache.
+- /history — Shows every past convert/decompile/smali/kotlin run, stored only in the browser's localStorage (metadata always, plus the output file itself if under ~350KB for re-download). Supports export/import as JSON, delete individual entries, and clear all.
 
-- /help — Explains the compile/dex/decompile pipeline and lists fixes for common errors (missing android.jar symbols, filename/class-name mismatches, missing dependency classes, multidex limits).
+- /settings — Toggle push notifications (Web Push API) and local per-action alerts, view app/install info, an install QR code, clear local history or offline cache.
 
-- /about — This page: what the app does, the tech stack, and this prompt.
+- /help — Explains the compile/dex/decompile pipeline, how to reach every conversion direction (including chaining Smali→DEX with Decompile to get Smali→Java), and lists fixes for common errors.
 
-Known limits: Convert accepts up to 20MB per file / 50 files per run. Decompile accepts up to 60MB per file / 5 files per run. Only plain Java + core android.* SDK classes compile — no AndroidX/Jetpack, no third-party libraries, no generated R class resources, since there's no full Gradle build behind it. If you're helping someone use this app, guide them to /convert for source→bytecode or /decompile for bytecode→source, and mention the size limits and the AndroidX/R-class limitation if relevant.</pre>
+- /api-docs — Documents the same endpoints above for direct curl/script use — no API key required.
+
+- /about — This page: what the app does, the tech stack, a full feature list, and this prompt.
+
+Known limits: Convert/Kotlin accept up to 20MB per file / 50 files per run. Decompile accepts up to 60MB per file / 5 files per run. No full Gradle build behind this — no generated R class resources, and most third-party libraries beyond the bundled AndroidX jars aren't available. Kotlin code compiles and dexes fine, but the Kotlin stdlib itself must be bundled separately into any real APK to run. Decompiled "Kotlin" output is really Java-style source reconstructed from bytecode, not idiomatic .kt syntax — no free tool does that reliably. If you're helping someone use this app, point them to /convert or /kotlin for source→bytecode, /decompile for bytecode→source, /smali for bytecode↔Smali, and /method-converter for a single method call — and mention the size/library limitations above if relevant.</pre>
     </div>
   </section>
 </main>
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <span>java2dex — javac + d8 + jadx, in the browser.</span>
+    <span>JaKo Compile — javac + d8 + jadx, in the browser.</span>
     <span>Free to use. No account required.</span>
   </div>
 </footer>

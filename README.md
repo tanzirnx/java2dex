@@ -1,17 +1,25 @@
-# java2dex
+# JaKo Compile
 
-A multi-page app for going both directions between `.java` source and Dalvik `.dex` bytecode — free, no account, runs in the browser, installs as an app, and can be built into a real Android APK.
+A multi-page app for going between `.java`/`.kt` source and Android `.dex`/`.smali` bytecode — free, no account, runs in the browser, installs as an app, and can be built into a real Android APK.
 
 **Pages**
 - **Home** (`/`) — what it does, the pipeline, feature list, Install App button
-- **Convert** (`/convert`) — .java → .dex. Upload files, a `.zip` project (auto-extracted), and/or paste code, drag-and-drop, upload progress bar, queue up to 50 files, structured compiler errors with a one-click copy button, Dex Inspector after success
-- **Decompile** (`/decompile`) — .dex / .apk / .jar / .class → readable .java source (via jadx), same progress/error/copy treatment
-- **History** (`/history`) — every past run (both directions), stored in your browser's `localStorage`, not on the server — export/import as JSON
-- **Settings** (`/settings`) — push notifications, local convert/decompile alerts, install QR code, app info, clear local data
-- **About** (`/about`) — what the app is, the tech stack, and a copyable **app prompt** — plain text you can hand to any AI assistant (or teammate) so it instantly understands what java2dex does
-- **Help** (`/help`) — how the pipeline works + fixes for the compile errors you'll actually hit
+- **Convert** (`/convert`) — .java → .dex. Upload files, a `.zip` project (auto-extracted), and/or paste code, drag-and-drop, upload progress bar, queue up to 50 files, structured compiler errors with a one-click copy button, Dex Inspector after success, manual multidex control
+- **Kotlin** (`/kotlin`) — .kt → .dex or .kt → .smali, same upload/paste/progress/error treatment as Convert
+- **Decompile** (`/decompile`) — .dex / .apk / .jar / .class → readable source (via jadx) — works on Java **or** Kotlin-compiled apps
+- **Smali** (`/smali`) — Java/Kotlin → Smali (baksmali), and Smali → .dex (smali assembler) for round-trip bytecode editing, with method/field counts and inline preview
+- **Method Converter** (`/method-converter`) — standalone, fully client-side: turns a single Java method call into its exact Smali `invoke-*` instruction, with a plain-English breakdown
+- **History** (`/history`) — every past run across all tools, stored in your browser's `localStorage`, not on the server — export/import as JSON
+- **Settings** (`/settings`) — push notifications, local run alerts, install QR code, dark/light theme, app info, clear local data
+- **About** (`/about`) — what the app is, the tech stack, a full feature list, and a copyable **app prompt** — plain text you can hand to any AI assistant (or teammate) so it instantly understands what JaKo Compile does
+- **API Docs** (`/api-docs`) — every endpoint documented with curl examples, no API key needed
+- **Help** (`/help`) — how the pipeline works, how to reach every conversion direction, and fixes for the errors you'll actually hit
 
-**Backend**: Node/Express. `javac` + `d8` for conversion, `jadx` for decompilation, `web-push` for notifications, `adm-zip` for `.zip` project uploads.
+**Backend**: Node/Express. `javac` + `kotlinc` + `d8` for conversion, `jadx` for decompilation, `baksmali`/`smali` for bytecode↔Smali, `web-push` for notifications, `adm-zip` for `.zip` project uploads.
+
+## Design
+
+Rebranded as **JaKo Compile** with a violet/cyan glassmorphism theme (frosted blur panels, blurred color-blob backgrounds) across every page, plus a dark/light toggle. The `.card` component and shared CSS variables carry the look everywhere, so no page-specific markup changes were needed for the reskin.
 
 ## Installable app (PWA)
 
@@ -51,6 +59,17 @@ Powered by [jadx](https://github.com/skylot/jadx), pinned to a specific version 
 
 Decompiled output is best-effort: variable/method names are regenerated, and heavily obfuscated or R8-minified code may come back partial. Only decompile code you have the right to inspect.
 
+## Kotlin support (v4)
+
+- **`POST /kotlin-to-dex`** and **`POST /kotlin-to-smali`** — `kotlinc` compiles directly to `.class` (no `javac` step), then the same `d8`/`baksmali` pipeline as the Java routes takes over. Field name is `kotlinFiles`; accepts `.kt` files or a `.zip`.
+- **Caveat, stated in the UI**: code using Kotlin stdlib functions compiles and dexes fine, but the stdlib itself isn't bundled in the output — a real APK needs it added separately (same category of caveat as `android.jar` being stub-only, just the other direction: this one *does* need bundling).
+- **Decompiling Kotlin apps**: already covered by the existing `/decompile` route — jadx doesn't distinguish source language. Output is always Java-style syntax; no freely available tool reliably reconstructs idiomatic `.kt` from bytecode, and the UI says so rather than overpromising.
+- `kotlinc` is downloaded as a prebuilt release zip at Docker build time (`KOTLIN_VERSION` in the `Dockerfile`).
+
+## Method Converter
+
+`/method-converter` needs no server call — it's a deterministic client-side generator. Given a class name, method name, parameter types, return type, and an invocation kind (`static`/`virtual`/`direct`/`interface`), it builds the correct register list, resolves each Java type to its Smali descriptor (primitives, common `java.*`/`android.*` types, or any fully-qualified name), and prints the `invoke-*` line plus a `move-result` line when the method returns a value — with an explanation of every part. Verified against hand-checked examples during development (including `invoke-static {p0}, Lcom/example/Foo;->bar(Landroid/app/Activity;)V` for a static call, and a `move-result-object` case for a returning `invoke-virtual`).
+
 ## Smali (v3)
 
 New page: **`/smali`**, with a glassmorphism ("glass UI") look — frosted panels, blurred color blobs, distinct from the rest of the site.
@@ -86,12 +105,13 @@ New page: **`/smali`**, with a glassmorphism ("glass UI") look — frosted panel
 ## Notes / limits
 
 - **Free plan spins down after inactivity** — first request after idle takes ~30-60s to wake up, and resets push subscriptions + in-memory share tokens.
-- Convert: **20MB per file, 50 files max** per run (or a `.zip` — only `.java` entries inside it are used). Decompile: **60MB per file, 5 files max**. Edit limits in `server.js` → the relevant `multer(...)` block.
-- Android SDK classes (`android.app.*`, `android.widget.*`, etc.) compile out of the box — `android.jar` (API 34) is wired in automatically. AndroidX/Jetpack, third-party libraries, and generated `R` class resources are **not** available (no full Gradle build behind this).
+- Convert/Kotlin: **20MB per file, 50 files max** per run (or a `.zip` — only matching source entries inside it are used). Decompile: **60MB per file, 5 files max**. Edit limits in `server.js` → the relevant `multer(...)` block.
+- Android SDK classes (`android.app.*`, `android.widget.*`, etc.) compile out of the box for both languages — `android.jar` (API 34) plus a handful of AndroidX/Material jars are wired in automatically. Most third-party libraries and generated `R` class resources are **not** available (no full Gradle build behind this).
 - History lives entirely in `localStorage`: metadata for every run, plus the actual output file if under ~350KB. Nothing is stored server-side after your download starts. Export/import lets you move it between devices manually.
-- Change the Android API level via `PLATFORM_VERSION`, or the decompiler version via `JADX_VERSION`, in the `Dockerfile`.
-- Bumping `sw.js`'s `CACHE_NAME` (e.g. `-v4`) forces installed clients to fetch fresh assets on next visit — do this after any redeploy that changes pages/CSS/JS.
-- Keyboard shortcuts on Convert/Decompile: **Ctrl+Enter** to run, **Esc** to clear the queue.
+- Change the Android API level via `PLATFORM_VERSION`, the decompiler version via `JADX_VERSION`, the smali/baksmali version via `SMALI_VERSION`, or the Kotlin compiler version via `KOTLIN_VERSION`, in the `Dockerfile`.
+- Bumping `sw.js`'s `CACHE_NAME` forces installed clients to fetch fresh assets on next visit — do this after any redeploy that changes pages/CSS/JS.
+- Keyboard shortcuts on every conversion page: **Ctrl+Enter** to run, **Esc** to clear the queue.
+- **Deliberately not built**: an actual code-*execution* endpoint (running compiled Java/Kotlin, or rendering XML layouts live). Compiling is fine — it never runs anything — but a public, unauthenticated "run my code" endpoint on a free server is a real abuse vector (crypto-mining, network attacks, resource exhaustion), so it's out of scope here regardless of framing.
 
 ## Local dev (needs JDK + Android build-tools + jadx installed locally)
 

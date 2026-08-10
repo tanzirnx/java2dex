@@ -1,9 +1,11 @@
-const CACHE_NAME = "java2dex-shell-v5";
+const CACHE_NAME = "jako-compile-shell-v6";
 const APP_SHELL = [
   "/",
   "/convert",
   "/decompile",
   "/smali",
+  "/kotlin",
+  "/method-converter",
   "/history",
   "/help",
   "/settings",
